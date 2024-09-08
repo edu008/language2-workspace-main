@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+type DeutschsArticle {
+  Content        String?
+  DateSource     DateTime? @db.Date
+  Sentence_D     String?
+  Source         String?
+  TitleOfArticle String?
+}
+
+type DeutschsTranslF {
+  Transl_F String?
+}
+
+type DeutschsTypeOfWord {
+  TypeOfWord String
+}
+
+model accounts {
+  id                String @id @default(auto()) @map("_id") @db.ObjectId
+  access_token      String
+  expires_at        Int
+  id_token          String
+  provider          String
+  providerAccountId String
+  refresh_token     String
+  scope             String
+  token_type        String
+  type              String
+  userId            String @db.ObjectId
+}
+
+model deutschs {
+  id            String               @id @default(auto()) @map("_id") @db.ObjectId
+  Article       DeutschsArticle[]
+  Artikel       String?
+  DateEntryWord DateTime?            @db.Date
+  Definition    String?
+  Prefix        String?
+  Root          String?
+  Structure     String?
+  Transl_F      DeutschsTranslF[]
+  TypeOfWord    DeutschsTypeOfWord[]
+  Word          String?
+}
+
+model praepositions {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  Loesung String
+  Datum      DateTime? @db.Date
+  Satz    String
+  quelle  String?
+}
+
+model praepverbens {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  Beispiele  String?
+  Erklaerung String?
+  Datum      DateTime? @db.Date
+  Loesung    String?
+  Satz       String?
+  Verb       String?
+  quelle  String?
+}
+
+model sessions {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  expires      DateTime @db.Date
+  sessionToken String
+  userId       String   @db.ObjectId
+}
+
+model sprichworts {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  Beispiel   String
+  Datum      DateTime? @db.Date
+  Erklaerung String
+  Quelle     String?
+  Sprichwort String
+  Wort       String
+}
+
+model redewendungs {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  Beispiel   String
+  Datum      DateTime? @db.Date
+  Erklaerung String
+  Quelle     String?
+  Redewendung String
+  Wort       String
+}
+
+
+model standings {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  alltime   Int
+  correct   Int
+  exercise  String @db.ObjectId
+  kategorie String
+  trained   Int
+  user      String
+}
+
+model users {
+  id            String @id @default(auto()) @map("_id") @db.ObjectId
+  email         String
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  emailVerified Json?
+  image         String
+  name          String
+}
