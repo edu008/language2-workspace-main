@@ -2,7 +2,7 @@
 
 **Name:** Eduan Roci  
 **Projekttitel:** Sprachdatenbank  
-**Statusbericht Nr.:** 1  
+**Statusbericht Nr.:** 2  
 **Datum:** 29.09.2024  
 
 ## Aktuelle Tätigkeiten und Probleme:
