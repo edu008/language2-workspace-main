@@ -3,7 +3,7 @@
 Name: 			Eduan Roci
 Project Title:		Sprachdatenbank
 Status Report No.:	1
-Datum:			25.09.202x
+Datum:			29.09.2024
 
 ## Current Activities and Problems:
 ### Was habe ich konkret in der letzten Woche unternommen?

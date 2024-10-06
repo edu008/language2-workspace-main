@@ -594,11 +594,16 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
         const handleCardside = () => {
             setShowContent1(!showContent1);
         }
-
+        
         const splitSentences = (text) => {
-            const parts = text.split(';');
-            return parts.flatMap(part => part.split('.')).map(s => s.trim()).filter(s => s.length > 0);
-        }
+            // Entferne alle überflüssigen Zeichen, trenne nur an sinnvollen Stellen wie "." oder ";"
+            const parts = text.split(/[.;]+/).map(s => s.trim()).filter(s => s.length > 0);
+            return parts.join(", ");  // Füge die Sätze durch Kommas zusammen
+        };
+        
+        
+        
+        
 
 
         const Content1 = () => {
@@ -618,17 +623,16 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                                     <p className="mx-auto">{typeofword.TypeOfWord}</p>
                                 </div>
                             ))}
-                            <p className="text-2xl mx-auto mt-5 font-semibold">Beispiele</p>
-                            {deutsch.Article.map((article, index) => (
-                                <div key={index} className="mb-2">
-                                    {splitSentences(article.Sentence_D).map((sentence, sentenceindex) => (
-                                        <p key={sentenceindex} className="mx-auto">
-                                            <span className="bullet-point ml-1 mr-2"></span> {sentence}
-                                        </p>
-                                    ))}
-                                    <p className="text-sm mt-5 font-semibold">Quelle: {article.Source} ("{article.TitleOfArticle}", {new Date(article.DateSource).toLocaleDateString()})</p>
-                                </div>
-                            ))}
+<p className="text-2xl mx-auto mt-5 font-semibold">Beispiele</p>
+{deutsch.Article.map((article, index) => (
+    <div key={index} className="mb-2">
+        <p className="mx-auto">
+            {splitSentences(article.Sentence_D)}  {/* Zeige die Sätze ohne Bullet Points an */}
+        </p>
+        <p className="text-sm mt-5 font-semibold">Quelle: {article.Source} ("{article.TitleOfArticle}", {new Date(article.DateSource).toLocaleDateString()})</p>
+    </div>
+))}
+
                         </div>
                     </div>
                     <div className="absolute bottom-0 right-0 mb-5 mr-5 text-right">
