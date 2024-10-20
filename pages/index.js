@@ -15,22 +15,23 @@ export default function Component() {
       {/* Header mit Profil und Abmelden-Button */}
       <div className="flex justify-between items-center bg-gray-100 p-4">
         <div><h1 className="text-xm">Deutsch lernen</h1></div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center">
           <Image
             src={session.user.image}
             alt={session.user.name}
             width={40}
             height={40}
-            className="rounded-full"
+            className="rounded-full mr-4"
           />
-          <p className="text-gray-700">{session.user.email}</p>
+          <p className="text-gray-700 mr-4">{session.user.email}</p>
           <button className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-2 px-4 rounded-full" onClick={() => signOut()}>Abmelden</button>
         </div>
       </div>
 
       {/* Flexbox für Titel und Worterfassung-Box */}
       <div className="flex justify-between items-center w-full p-6">
-        {/* Titel zentriert und nach rechts verschoben */}
+      <a className="bg-light-400 hover:bg-light-500 flex justify-center items-center rounded-lg mr-8 mt-4" style={{ width: '300px', height: '150px' }}>
+        </a>        {/* Titel zentriert und nach rechts verschoben */}
         <h1 className="text-5xl font-bold text-center flex-1 ml-16">Wähle ein Übungsstapel aus...</h1>
         {/* Worterfassung-Box rechts, größer und zentriert */}
         <a href="/Worterfassung" className="bg-gray-400 hover:bg-gray-500 focus:bg-gray-500 active:bg-gray-600 text-white font-bold h-28 w-72 flex justify-center items-center rounded-lg text-3xl text-center mr-8 mt-4" style={{ width: '300px', height: '150px' }}>

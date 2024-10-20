@@ -31,11 +31,11 @@ export default function Worterfassung() {
       <h1 className="text-5xl font-bold text-center mb-8 pt-2">Neue Wörter erfassen</h1>
       <div className="flex justify-center pb-4">
         <div className="grid grid-cols-2 gap-10">
-          <Link href="/enterdeutsch" className="bg-pink-300 hover:bg-pink-400 focus:bg-pink-400 active:bg-pink-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center">Wortbedeutungen</Link>
-          <Link href="/enterpraeposition" className="bg-orange-300 hover:bg-orange-400 focus:bg-orange-400 active:bg-orange-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center">Präpositionen</Link>
-          <Link href="/enterpraepverben" className="bg-blue-300 hover:bg-blue-400 focus:bg-blue-400 active:bg-blue-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center">Präpositionen & Verben</Link>
-          <Link href="/entersprichwort" className="bg-green-300 hover:bg-green-400 focus:bg-green-400 active:bg-green-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center">Sprichtwort</Link>
-          <Link href="/enterredewendung" className="bg-purple-300 hover:bg-purple-500 focus:bg-purple-500 active:bg-purple-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center">Redewendung</Link>
+          <Link href="/enterdeutsch" className="bg-pink-300 hover:bg-pink-400 focus:bg-pink-400 active:bg-pink-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center"style={{ width: '300px', height: '150px' }}>Wortbedeutungen</Link>
+          <Link href="/enterpraeposition" className="bg-orange-300 hover:bg-orange-400 focus:bg-orange-400 active:bg-orange-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center"style={{ width: '300px', height: '150px' }}>Präpositionen</Link>
+          <Link href="/enterpraepverben" className="bg-blue-300 hover:bg-blue-400 focus:bg-blue-400 active:bg-blue-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center"style={{ width: '300px', height: '150px' }}>Präpositionen & Verben</Link>
+          <Link href="/entersprichwort" className="bg-green-300 hover:bg-green-400 focus:bg-green-400 active:bg-green-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center"style={{ width: '300px', height: '150px' }}>Sprichtwort</Link>
+          <Link href="/enterredewendung" className="bg-purple-300 hover:bg-purple-500 focus:bg-purple-500 active:bg-purple-500 text-white font-bold h-80 w-80 flex justify-center items-center rounded-lg text-3xl text-center"style={{ width: '300px', height: '150px' }}>Redewendung</Link>
         </div>
       </div>
     </>
