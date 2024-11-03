@@ -332,13 +332,11 @@ export default function Deutsch({ summary, filteredDeutsch }) {
         document.getElementById("Konjunktion").checked = false;
         document.getElementById("IntransitivesVerb").checked = false;
         document.getElementById("ReflexivesVerb").checked = false;
-        document.getElementById("AdverbialeBestimmung").checked = false;
         document.getElementById("Adjektiv").checked = false;
         document.getElementById("Ausdruck").checked = false;
         document.getElementById("TransitivesVerb").checked = false;
         document.getElementById("Adverb").checked = false;
         document.getElementById("Präposition").checked = false;
-        document.getElementById("Pronomen").checked = false;
         document.getElementById("Nomen").checked = false;
         document.getElementById("Partizip").checked = false;
         document.getElementById("UnpersönlichesVerb").checked = false;
@@ -614,13 +612,6 @@ export default function Deutsch({ summary, filteredDeutsch }) {
                                         onChange={(e) => handleCheckboxChange(e, e.target.value)}
                                         className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
                                     <label htmlFor="Adverb">Adverb</label>
-                                </div>
-                                <div>
-                                    <input type="checkbox" id="AdverbialeBestimmung" name="worttyp" value="Adverbiale Bestimmung"
-                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Adverbiale Bestimmung')}
-                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
-                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
-                                    <label htmlFor="AdverbialeBestimmung">Adverbiale Bestimmung</label>
                                 </div>
                                 <div>
                                     <input type="checkbox" id="Ausdruck" name="worttyp" value="Ausdruck"

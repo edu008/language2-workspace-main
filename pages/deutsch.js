@@ -31,7 +31,7 @@ export async function getServerSideProps(context) {
 
         deutsch.forEach(document => {
             document.Article.forEach(article => {
-                if (article.DateSource instanceof Date) {
+                if (article.DateSource !== null && article.DateSource instanceof Date) {
                     article.DateSource = article.DateSource.toISOString();
                 }
             });
@@ -260,13 +260,11 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
             document.getElementById("TransitivesVerbFilter").checked = false;
             document.getElementById("IntransitivesVerbFilter").checked = false;
             document.getElementById("ReflexivesVerbFilter").checked = false;
-            document.getElementById("PronomenFilter").checked = false;
             document.getElementById("PräpositionFilter").checked = false;
             document.getElementById("PartizipFilter").checked = false;
             document.getElementById("NomenFilter").checked = false;
             document.getElementById("KonjunktionFilter").checked = false;
             document.getElementById("AusdruckFilter").checked = false;
-            document.getElementById("AdverbialeBestimmungFilter").checked = false;
             document.getElementById("AdverbFilter").checked = false;
             document.getElementById("AdjektivFilter").checked = false;
         }, 500);
@@ -288,13 +286,11 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                 document.getElementById("TransitivesVerbFilter").checked = false;
                 document.getElementById("IntransitivesVerbFilter").checked = false;
                 document.getElementById("ReflexivesVerbFilter").checked = false;
-                document.getElementById("PronomenFilter").checked = false;
                 document.getElementById("PräpositionFilter").checked = false;
                 document.getElementById("PartizipFilter").checked = false;
                 document.getElementById("NomenFilter").checked = false;
                 document.getElementById("KonjunktionFilter").checked = false;
                 document.getElementById("AusdruckFilter").checked = false;
-                document.getElementById("AdverbialeBestimmungFilter").checked = false;
                 document.getElementById("AdverbFilter").checked = false;
                 document.getElementById("AdjektivFilter").checked = false;
             }, 200);
@@ -395,13 +391,11 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
             document.getElementById("TransitivesVerbFilter").checked = false;
             document.getElementById("IntransitivesVerbFilter").checked = false;
             document.getElementById("ReflexivesVerbFilter").checked = false;
-            document.getElementById("PronomenFilter").checked = false;
             document.getElementById("PräpositionFilter").checked = false;
             document.getElementById("PartizipFilter").checked = false;
             document.getElementById("NomenFilter").checked = false;
             document.getElementById("KonjunktionFilter").checked = false;
             document.getElementById("AusdruckFilter").checked = false;
-            document.getElementById("AdverbialeBestimmungFilter").checked = false;
             document.getElementById("AdverbFilter").checked = false;
             document.getElementById("AdjektivFilter").checked = false;
             router.replace(
@@ -587,13 +581,11 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
         document.getElementById("Konjunktion").checked = false;
         document.getElementById("IntransitivesVerb").checked = false;
         document.getElementById("ReflexivesVerb").checked = false;
-        document.getElementById("AdverbialeBestimmung").checked = false;
         document.getElementById("Adjektiv").checked = false;
         document.getElementById("Ausdruck").checked = false;
         document.getElementById("TransitivesVerb").checked = false;
         document.getElementById("Adverb").checked = false;
         document.getElementById("Präposition").checked = false;
-        document.getElementById("Pronomen").checked = false;
         document.getElementById("Nomen").checked = false;
         document.getElementById("Partizip").checked = false;
         document.getElementById("UnpersönlichesVerb").checked = false;
@@ -628,12 +620,10 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                         <div className="text-left mt-20">
                             <p className="text-2xl mx-auto font-semibold">Struktur</p>
                             <p className=" mb-4 mx-auto">{deutsch.Structure}</p>
-                            <p className="text-2xl mx-auto mt-5 font-semibold">Wortart</p>
+                            <p className="text-2xl mx-auto mt-5 ">Wortart:
                             {deutsch.TypeOfWord.map((typeofword, index) => (
-                                <div key={index}>
-                                    <p className="mx-auto">{typeofword.TypeOfWord}</p>
-                                </div>
-                            ))}
+                                    <span key={index}> {typeofword.TypeOfWord}</span>
+                            ))}</p>
                             <p className="text-2xl mx-auto mt-5 font-semibold">Beispiele</p>
                             {deutsch.Article.map((article, index) => (
 
@@ -643,8 +633,15 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                                             <span className="bullet-point ml-1 mr-2"></span> {sentence}
                                         </p>
                                     ))}
-                                    <p className="text-sm mt-5 font-semibold">Quelle: {article.Source} ("{article.TitleOfArticle}", {new Date(article.DateSource).toLocaleDateString()})</p>
-                                </div>
+<p className="text-sm mt-5 font-semibold">
+  Quelle: {article.Source}
+  {(article.TitleOfArticle || article.DateSource) && " ("}
+  {article.TitleOfArticle ? `"${article.TitleOfArticle}"` : ""}
+  {article.TitleOfArticle && article.DateSource ? ", " : ""}
+  {article.DateSource ? new Date(article.DateSource).toLocaleDateString() : ""}
+  {(article.TitleOfArticle || article.DateSource) && ")"}
+</p>
+                             </div>
                                 
 
                             ))}
@@ -1245,15 +1242,6 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                                 <label htmlFor="AdverbFilter">Adverb</label>
                             </div>
                             <div>
-                                <input type="radio" id="AdverbialeBestimmungFilter" name="worttypFilter" value="Adverbiale Bestimmung"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
-                                    onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
-                                        'bg-gray-300'
-                                        }`} />
-                                <label htmlFor="AdverbialeBestimmungFilter">Adverbiale Bestimmung</label>
-                            </div>
-                            <div>
                                 <input type="radio" id="AusdruckFilter" name="worttypFilter" value="Ausdruck"
                                     disabled={window.location.search.length > 0 || searchInput !== ''}
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
@@ -1299,15 +1287,6 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="PräpositionFilter">Präposition</label>
-                            </div>
-                            <div>
-                                <input type="radio" id="PronomenFilter" name="worttypFilter" value="Pronomen"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
-                                    onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
-                                        'bg-gray-300'
-                                        }`} />
-                                <label htmlFor="PronomenFilter">Pronomen</label>
                             </div>
                             <div>
                                 <input type="radio" id="IntransitivesVerbFilter" name="worttypFilter" value="Intransitives Verb"
