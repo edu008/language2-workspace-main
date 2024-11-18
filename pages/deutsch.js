@@ -618,8 +618,7 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                         <p className="text-5xl mb-4 mx-auto font-bold">{deutsch.Word}</p>
                         <p className="text-3xl mb-8 mx-auto font-medium">{deutsch.Prefix} / {deutsch.Root}</p>
                         <div className="text-left mt-20">
-                            <p className="text-2xl mx-auto font-semibold">Struktur</p>
-                            <p className=" mb-4 mx-auto">{deutsch.Structure}</p>
+                        <p className="text-2xl mx-auto mt-5">Struktur: {deutsch.Structure}</p>
                             <p className="text-2xl mx-auto mt-5 ">Wortart:
                             {deutsch.TypeOfWord.map((typeofword, index) => (
                                     <span key={index}> {typeofword.TypeOfWord}</span>

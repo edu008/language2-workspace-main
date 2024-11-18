@@ -248,21 +248,36 @@ export default function Praeposition({ praepositionCount, praeposition, standing
     };
 
 
-    const PraepositionenMitLoesungen = ({ satz, loesungen }) => {
-      const satzTeile = satz.split('__');
-      const loesungsTeile = loesungen.split(', ');
+    const PraepositionenMitLoesungen = ({ satz, loesung }) => {
+      const satzTeile = satz.split("_"); // Satz am "_" trennen
+    
+      // Wenn es nur ein einzelnes Wort in der Lösung gibt, und der Satz mehrere Lücken hat, 
+      // dann fülle alle Lücken mit dieser Lösung
+      const loesungen = typeof loesung === "string" ? loesung.split(",") : loesung;
+    
+      // Wenn nur ein einziges Wort als Lösung existiert, und mehrere _ im Satz sind,
+      // dann fülle alle _ mit dieser Lösung
+      const gefuellteLoesungen =
+        loesungen.length === 1 && satzTeile.length > 1
+          ? Array(satzTeile.length - 1).fill(loesungen[0])
+          : loesungen;
     
       return (
-        <div>
-          {satzTeile[0]}
-          {loesungsTeile.map((loesung, index) => (
-            <div key={index} className="mb-2">
-              {loesung} {satzTeile[index + 1]}
-            </div>
+        <span>
+          {satzTeile.map((teil, index) => (
+            <span key={index}>
+              {teil}
+              {index < gefuellteLoesungen.length && (
+                <strong> {gefuellteLoesungen[index].trim()} </strong>
+              )}
+            </span>
           ))}
-        </div>
+        </span>
       );
     };
+    
+    
+    
     
     const Content1 = () => {
       return (
@@ -282,14 +297,15 @@ export default function Praeposition({ praepositionCount, praeposition, standing
     }
     
     const Content2 = () => {
-      const satz = praeposition.Satz;
-      const loesungen = praeposition.Loesung; // z.B. "in, auf der, in, am"
+      const satz = praeposition.Satz; // Beispiel: "Wir sterben _ Langeweile."
+      const loesung = praeposition.Loesung; // Beispiel: "vor" oder "in, an, auf"
+    
       return (
         <div className="h-144 bg-white rounded-lg p-4 shadow-lg relative flex items-center">
           <div className="absolute top-0 bottom-0 left-0 right-0 bg-orange-200 opacity-50 z-10"></div>
           <div className="relative z-20 w-full max-w-full text-center">
             <div className="text-4xl mx-auto">
-              <PraepositionenMitLoesungen satz={satz} loesungen={loesungen} />
+              <PraepositionenMitLoesungen satz={satz} loesung={loesung} />
             </div>
           </div>
           <div className="absolute bottom-0 right-0 mb-5 mr-5 text-right">
@@ -298,7 +314,8 @@ export default function Praeposition({ praepositionCount, praeposition, standing
           </div>
         </div>
       );
-    }
+    };
+    
     
     return (
       <div onClick={handleCardside}>
