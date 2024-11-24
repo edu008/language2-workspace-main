@@ -247,11 +247,13 @@ export default function Praeposition({ praepositionCount, praeposition, standing
       );
     };
 
-
     const PraepositionenMitLoesungen = ({ satz, loesung }) => {
-      const satzTeile = satz.split("_"); // Satz am "_" trennen
+      // Satz so transformieren, dass vor jedem "_" ein Zeilenumbruch eingefügt wird
+      const transformierterSatz = satz.replace(/_/g, "\n_");
     
-      // Wenn es nur ein einzelnes Wort in der Lösung gibt, und der Satz mehrere Lücken hat, 
+      const satzTeile = transformierterSatz.split("_"); // Satz am "_" trennen
+    
+      // Wenn es nur ein einzelnes Wort in der Lösung gibt, und der Satz mehrere Lücken hat,
       // dann fülle alle Lücken mit dieser Lösung
       const loesungen = typeof loesung === "string" ? loesung.split(",") : loesung;
     
@@ -268,7 +270,10 @@ export default function Praeposition({ praepositionCount, praeposition, standing
             <span key={index}>
               {teil}
               {index < gefuellteLoesungen.length && (
-                <strong> {gefuellteLoesungen[index].trim()} </strong>
+                <>
+                  <br />
+                  <strong> {gefuellteLoesungen[index].trim()} </strong>
+                </>
               )}
             </span>
           ))}

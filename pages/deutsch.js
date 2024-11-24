@@ -659,13 +659,26 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                 <div className="h-144 bg-white rounded-lg p-4 shadow-lg relative flex items-center">
                     <div className="absolute top-0 bottom-0 left-0 right-0 bg-pink-200 opacity-50 z-10"></div>
                     <div className="relative z-20 w-full max-w-full text-center">
-                        {deutsch.Transl_F.map((transl, index) => (
-                            <div key={index}>
-                                <p className="text-3xl mb-5 font-medium">{transl.Transl_F}</p>
-                            </div>
-                        ))}
-                        <p className="text-2xl mx-auto mt-4">{deutsch.Definition}</p>
-                    </div>
+    {deutsch.Transl_F.map((transl, index) => (
+        <div key={index}>
+            {transl.Transl_F.split(';').map((line, lineIndex) => (
+                <p key={lineIndex} className="text-3xl mb-5 font-medium">
+                    {line.trim()}
+                </p>
+            ))}
+        </div>
+    ))}
+    {deutsch.Definition && (
+        <p className="text-2xl mx-auto mt-4">
+            {deutsch.Definition.split(';').map((line, lineIndex) => (
+                <span key={lineIndex} className="block">
+                    {line.trim()}
+                </span>
+            ))}
+        </p>
+    )}
+</div>
+
                     <div className="absolute bottom-0 right-0 mb-5 mr-5 text-right">
                         <p className="text-sm">Hinzugefügt am: {deutsch.DateEntryWord}</p>
                     </div>
