@@ -234,13 +234,13 @@ export default function Praeposition({ praepositionCount, praeposition, standing
     }
 
     const PraepositionenListe = ({ satz }) => {
-      const satzTeile = satz.split('__');
+      const satzTeile = satz.split('_');
       return (
         <div>
           {satzTeile[0]}
           {satzTeile.slice(1).map((teil, index) => (
             <div key={index} className="mb-2">
-              __ {teil}
+              _ {teil}
             </div>
           ))}
         </div>
