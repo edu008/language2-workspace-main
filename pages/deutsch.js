@@ -254,15 +254,16 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
     };
 
     const handleFilterClick = () => {
+        console.log(searchInput)
         if (searchInput !== '') {
             router.replace(
-                `/deutsch?searchInput=${encodeURIComponent(searchInput)}&isRootSearch=${isRootSearch}`,
+                `/deutsch?searchInput=${encodeURIComponent(searchInput)}`,
                 undefined,
                 { scroll: false }
             );
         } else if (newTypeOfWordFilter !== '') {
             router.replace(
-                `/deutsch?radioInput=${encodeURIComponent(newTypeOfWordFilter)}&isRootSearch=${isRootSearch}`,
+                `/deutsch?radioInput=${encodeURIComponent(newTypeOfWordFilter)}`,
                 undefined,
                 { scroll: false }
             );
@@ -275,6 +276,7 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
         setTimeout(() => {
             setSearchInput('');
             setNewTypeOfWordFilter('')
+            setIsRootSearch(false)
             setErrorMessage('')
             document.getElementById("UnpersönlichesVerbFilter").checked = false;
             document.getElementById("TransitivesVerbFilter").checked = false;
@@ -287,7 +289,8 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
             document.getElementById("AusdruckFilter").checked = false;
             document.getElementById("AdverbFilter").checked = false;
             document.getElementById("AdjektivFilter").checked = false;
-        }, 500);
+            document.getElementById("RootSearchFilter").checked = false;
+        }, 50);
         router.replace(
             `/deutsch`,
             undefined,
@@ -313,14 +316,14 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                 document.getElementById("AusdruckFilter").checked = false;
                 document.getElementById("AdverbFilter").checked = false;
                 document.getElementById("AdjektivFilter").checked = false;
-            }, 200);
+            }, 50);
             router.replace(
                 `/deutsch`,
                 undefined,
                 { scroll: false }
             );
         }
-    }, []);
+    }, [isRootSearch]);
 
     useEffect(() => {
         if (newTypeOfWordFilter !== '') {
@@ -829,7 +832,7 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                     {errorMessage && <Message message={errorMessage} />}
                     <input
     disabled={
-        window.location.search.length > 0 || newTypeOfWordFilter !== ''
+        window.location.search.length > 0 || (newTypeOfWordFilter !== '' && isRootSearch !== true)
     }
     id="search"
     type="text"
@@ -880,54 +883,54 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                         <div>
                             <div>
                                 <input type="radio" id="AdjektivFilter" name="worttypFilter" value="Adjektiv"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== ''|| isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="AdjektivFilter">Adjektiv</label>
                             </div>
                             <div>
                                 <input type="radio" id="AdverbFilter" name="worttypFilter" value="Adverb"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== ''|| isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="AdverbFilter">Adverb</label>
                             </div>
                             <div>
                                 <input type="radio" id="AusdruckFilter" name="worttypFilter" value="Ausdruck"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '' || isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="AusdruckFilter">Ausdruck</label>
                             </div>
                             <div>
                                 <input type="radio" id="KonjunktionFilter" name="worttypFilter" value="Konjunktion"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '' || isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="KonjunktionFilter">Konjunktion</label>
                             </div>
                             <div>
                                 <input type="radio" id="NomenFilter" name="worttypFilter" value="Nomen"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== ''|| isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="NomenFilter">Nomen</label>
                             </div>
                             <div>
                                 <input type="radio" id="PartizipFilter" name="worttypFilter" value="Partizip"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== ''|| isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="PartizipFilter">Partizip</label>
@@ -936,45 +939,45 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                         <div>
                             <div>
                                 <input type="radio" id="PräpositionFilter" name="worttypFilter" value="Präposition"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== ''|| isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="PräpositionFilter">Präposition</label>
                             </div>
                             <div>
                                 <input type="radio" id="IntransitivesVerbFilter" name="worttypFilter" value="Intransitives Verb"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== ''|| isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="IntransitivesVerbFilter">Verb (Intransitiv)</label>
                             </div>
                             <div>
                                 <input type="radio" id="ReflexivesVerbFilter" name="worttypFilter" value="Reflexives Verb"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== ''|| isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="UnpersönlichesVerbFilter">Verb (Reflexiv)</label>
                             </div>
                             <div>
                                 <input type="radio" id="TransitivesVerbFilter" name="worttypFilter" value="Transitives Verb"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== ''|| isRootSearch) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="TransitivesVerbFilter">Verb (Transitiv)</label>
                             </div>
                             <div>
                                 <input type="radio" id="UnpersönlichesVerbFilter" name="worttypFilter" value="Unpersönliches Verb"
-                                    disabled={window.location.search.length > 0 || searchInput !== ''}
+                                    disabled={window.location.search.length > 0 || searchInput !== '' || isRootSearch }
                                     onChange={e => setNewTypeOfWordFilter(e.target.value)}
-                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '') &&
+                                    className={`mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${(window.location.search.length > 0 || searchInput !== '' || isRootSearch ) &&
                                         'bg-gray-300'
                                         }`} />
                                 <label htmlFor="UnpersönlichesVerbFilter">Verb (Unpersönlich)</label>
@@ -983,7 +986,7 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
     <input
         type="checkbox"
         id="RootSearchFilter"
-        name="rootSearchFilter"
+        name="Root"
         checked={isRootSearch}
         onChange={(e) => setIsRootSearch(e.target.checked)}
         className={`mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500`}
@@ -1005,13 +1008,7 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                                 ) && newTypeOfWordFilter === '') ||
                                 (searchInput !== '' && newTypeOfWordFilter !== '')) &&
                                 'hover:bg-blue-700'
-                                }`}
-                            disabled={window.location.search.length > 0 ||
-                                (searchInput === '' && newTypeOfWordFilter === '') ||
-                                (filteredSuggestions.every(
-                                    (item) => item?.Word.toLowerCase().replace(/\s+\(\d+\)$/, '') !== searchInput.toLowerCase()
-                                ) && newTypeOfWordFilter === '') || (searchInput !== '' && newTypeOfWordFilter !== '')
-                            }>
+                                }`}>
                             <FontAwesomeIcon icon={faFilter} className="mr-2 fa-lg fa-fw" /></button>
                         <button className={`flex-1 mt-4 mb-4 w-full px-4 py-2 rounded text-2xl font-semibold text-white bg-red-500 hover:bg-red-600 ${(window.location.search.length === 0 && newTypeOfWordFilter === '' && searchInput === '') &&
                             'hover:bg-red-600'
