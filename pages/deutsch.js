@@ -20,12 +20,7 @@ import {
   } from "@material-tailwind/react";
 
 export async function getServerSideProps(context) {
-    const session = await getSession(context);
-    const { query } = context;
-
-    const searchInput = query.searchInput || '';
-    const radioInput = query.radioInput || '';
-    const isRootSearch = query.isRootSearch === 'true'; // Hinzugefügt
+    const session = await getSession(context)
     if (session) {
         const deutsch = await getDeutsch();
 
@@ -66,18 +61,14 @@ export async function getServerSideProps(context) {
                 return finishedObj.exercise === deutschObj.id;
             });
         }).filter((deutschObj) => {
-            if (searchInput !== '') {
-                if (isRootSearch && deutschObj.Root) {
-                    return deutschObj.Root.toLowerCase().includes(searchInput.toLowerCase());
-                } else if (deutschObj.Word) {
-                    return deutschObj.Word.toLowerCase().includes(searchInput.toLowerCase());
-                }
-            } else if (radioInput !== '' && deutschObj.TypeOfWord) {
+            if (searchInput !== '' && deutschObj.Word) {
+                return deutschObj.Word === searchInput;
+            }
+            else if (radioInput !== '' && deutschObj.TypeOfWord) {
                 return deutschObj.TypeOfWord.some(obj => obj.TypeOfWord === radioInput);
             }
             return true;
         });
-        
 
         const summary = standingSums.summary.map((standing) => {
             const matchingDeutsch = deutsch.find((deutschObj) => {
@@ -158,8 +149,6 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
     const [suggestions, setSuggestions] = useState([]);
     const [filteredSuggestions, setFilteredSuggestions] = useState([]);
     const [newTypeOfWordFilter, setNewTypeOfWordFilter] = useState("");
-    const [isRootSearch, setIsRootSearch] = useState(false);
-
 
     const [open, setOpen] = useState(false);
  
@@ -173,51 +162,44 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
         updateSuggestions(cleanedSuggestion);
     };
 
-
-    const updateRootSuggestions = (inputValue) => {
-        if (filteredDeutsch && filteredDeutsch.length > 0) {
-            // Zähle die Duplikate basierend auf dem Root-Feld
-            const duplicatesCount = filteredDeutsch.reduce((countMap, item) => {
-                const root = item?.Root;
-                if (root && root.toLowerCase().includes(inputValue.toLowerCase())) {
-                    countMap[root] = (countMap[root] || 0) + 1;
-                }
-                return countMap;
-            }, {});
-    
-            // Erstelle die Vorschlagsliste
-            const filteredResults = Object.keys(duplicatesCount).map((root) => ({
-                Word: `${root} (${duplicatesCount[root]})`, // Anzeige wie in der globalen Suche
-            }));
-    
-            setSuggestions(filteredResults); // Setze die Vorschläge
-        } else {
-            setSuggestions([]); // Keine Ergebnisse, leere Vorschläge
-        }
-    };
-    
     const updateSuggestions = (inputValue) => {
         if (filteredDeutsch && filteredDeutsch.length > 0) {
-            const key = isRootSearch ? "Root" : "Word";
             const duplicatesCount = filteredDeutsch.reduce((countMap, item) => {
-                const value = item?.[key];
-                if (value && value.toLowerCase().includes(inputValue.toLowerCase())) {
-                    countMap[value] = (countMap[value] || 0) + 1;
+                const word = item?.Word;
+                if (word && word.toLowerCase().includes(inputValue.toLowerCase())) {
+                    countMap[word] = (countMap[word] || 0) + 1;
                 }
                 return countMap;
             }, {});
-    
-            const filteredResults = Object.keys(duplicatesCount).map((value) => ({
-                Word: `${value} (${duplicatesCount[value]})`,
-            }));
-    
+
+            const filteredResults = Object.keys(duplicatesCount).map((word) => {
+                const count = duplicatesCount[word];
+                return {
+                    Word: `${word} (${count})`,
+                };
+            });
+
             setSuggestions(filteredResults);
+            setFilteredSuggestions(filteredResults);
+
+            const matchingEntries = filteredDeutsch.filter(
+                (item) =>
+                    item?.Word &&
+                    item.Word.toLowerCase() === inputValue.toLowerCase()
+            );
+
+            if (matchingEntries.length === 0 && inputValue !== "") {
+                setErrorMessage(
+                    'Dieses Wort ist nicht erfasst oder du hast es bereits vollständig erlernt!'
+                );
+            } else {
+                setErrorMessage('');
+            }
         } else {
+            setFilteredSuggestions([]);
             setSuggestions([]);
         }
     };
-    
-    
 
     const handleFocus = () => {
         if (searchInput) {
@@ -256,20 +238,18 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
     const handleFilterClick = () => {
         if (searchInput !== '') {
             router.replace(
-                `/deutsch?searchInput=${encodeURIComponent(searchInput)}&isRootSearch=${isRootSearch}`,
+                `/deutsch?searchInput=${encodeURIComponent(searchInput)}`,
                 undefined,
                 { scroll: false }
             );
         } else if (newTypeOfWordFilter !== '') {
             router.replace(
-                `/deutsch?radioInput=${encodeURIComponent(newTypeOfWordFilter)}&isRootSearch=${isRootSearch}`,
+                `/deutsch?radioInput=${encodeURIComponent(newTypeOfWordFilter)}`,
                 undefined,
                 { scroll: false }
             );
         }
     };
-    
-    
 
     const handleRemoveFilter = () => {
         setTimeout(() => {
@@ -782,6 +762,394 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                 </div>
 
 
+                { /* <form className="my-4">
+                    <h1 className="text-2xl font-bold mb-4">Neue Wortbedeutung erfassen</h1>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <div className="mb-5">
+                                <div>
+                                    <label htmlFor="word" className="block text_md font-medium text-gray-700">
+                                        Wort:
+                                    </label>
+                                </div>
+                                <div>
+                                    <input
+                                        id="word"
+                                        type="text"
+                                        onChange={(e) => setNewWord(e.target.value)}
+                                        value={newWord}
+                                        className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                        style={{ height: '2.5rem' }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mb-5">
+                                <div>
+                                    <label htmlFor="prefix" className="block text_md font-medium text-gray-700">
+                                        Präfix:
+                                    </label>
+                                </div>
+                                <div>
+                                    <input
+                                        id="prefix"
+                                        type="text"
+                                        onChange={(e) => setNewPrefix(e.target.value)}
+                                        value={newPrefix}
+                                        className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                        style={{ height: '2.5rem' }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mb-5">
+                                <div>
+                                    <label htmlFor="root" className="block text_md font-medium text-gray-700">
+                                        Wurzel:
+                                    </label>
+                                </div>
+                                <div>
+                                    <input
+                                        id="root"
+                                        type="text"
+                                        onChange={(e) => setNewRoot(e.target.value)}
+                                        value={newRoot}
+                                        className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                        style={{ height: '2.5rem' }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mb-5">
+                                <div>
+                                    <label htmlFor="structure" className="block text_md font-medium text-gray-700">
+                                        Struktur:
+                                    </label>
+                                </div>
+                                <div>
+                                    <input
+                                        id="structure"
+                                        type="text"
+                                        onChange={(e) => setNewStructure(e.target.value)}
+                                        value={newStructure}
+                                        className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                        style={{ height: '2.5rem' }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mb-12">
+                                <div>
+                                    <label htmlFor="definition" className="block text_md font-medium text-gray-700">
+                                        Definition:
+                                    </label>
+                                </div>
+                                <div>
+                                    <input
+                                        id="definition"
+                                        type="text"
+                                        onChange={(e) => setNewDefinition(e.target.value)}
+                                        value={newDefinition}
+                                        className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                        style={{ height: '2.5rem' }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mb-5 mt-2">
+                                {articles.map((article, index) => (
+                                    <div key={index} className="bg-blue-100 relative mb-9 rounded-md">
+                                        <div>
+                                            <label
+                                                className="block text-xl font-medium text-gray-700"
+                                            >
+                                                Beispiel {index + 1}
+                                            </label>
+                                        </div>
+
+                                        <div>
+                                            <div>
+                                                <label htmlFor={`title_${index}`} className="block text-md font-medium text-gray-700">
+                                                    Titel:
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <input
+                                                    id={`title_${index}`}
+                                                    type="text"
+                                                    onChange={(e) => handleArticleFieldChange(index, 'TitleOfArticle', e.target.value)}
+                                                    value={article.TitleOfArticle}
+                                                    className="mt-1 mb-5 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                                    style={{ height: '2.5rem' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div>
+                                                <label htmlFor={`sentence_${index}`} className="block text-md font-medium text-gray-700">
+                                                    Satz:
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <input
+                                                    id={`sentence_${index}`}
+                                                    type="text"
+                                                    onChange={(e) => handleArticleFieldChange(index, 'Sentence_D', e.target.value)}
+                                                    value={article.Sentence_D}
+                                                    className="mt-1 mb-5 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                                    style={{ height: '2.5rem' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div>
+                                                <label htmlFor={`source_${index}`} className="block text-md font-medium text-gray-700">
+                                                    Quelle:
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <input
+                                                    id={`source_${index}`}
+                                                    type="text"
+                                                    onChange={(e) => handleArticleFieldChange(index, 'Source', e.target.value)}
+                                                    value={article.Source}
+                                                    className="mt-1 mb-5 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                                    style={{ height: '2.5rem' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div>
+                                                <label htmlFor={`date_${index}`} className="block text-md font-medium text-gray-700">
+                                                    Veröffentlichung:
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <input
+                                                    id={`date_${index}`}
+                                                    type="date"
+                                                    onChange={(e) => handleArticleFieldChange(index, 'DateSource', e.target.value)}
+                                                    value={article.DateSource}
+                                                    className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                                    style={{ height: '2.5rem' }}
+                                                    max={new Date().toISOString().split('T')[0]}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            {index === 0 && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleAddArticle();
+                                                    }}
+                                                    className="absolute right-1 top-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded-md"
+                                                >
+                                                    <FontAwesomeIcon icon={faPlus} className="fa-lg fa-fw" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div>
+                                            {index > 0 && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleRemoveArticle(index);
+                                                    }}
+                                                    className="absolute right-1 top-0 mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-2 rounded-md"
+                                                >
+                                                    <FontAwesomeIcon icon={faTimes} className="fa-lg fa-fw" />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div className="mb-5">
+                                <div>
+                                    <label htmlFor="artikel" className="block text-md font-medium text-gray-700">
+                                        Artikel:
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="keiner" name="artikel" value="" defaultChecked
+                                        onChange={e => setNewArtikel(e.target.value)} className="mr-2  appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="keiner">Keiner</label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="der" name="artikel" value="der"
+                                        onChange={e => setNewArtikel(e.target.value)} className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="der"  >der</label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="die" name="artikel" value="die"
+                                        onChange={e => setNewArtikel(e.target.value)} className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="die" >die</label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="das" name="artikel" value="das"
+                                        onChange={e => setNewArtikel(e.target.value)} className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="das" >das</label>
+                                </div>
+                            </div>
+                            <div className="mb-5">
+                                <div>
+                                    <label htmlFor="worttyp" className="block text_md font-medium text-gray-700">
+                                        Wortart:
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="Adjektiv" name="worttyp" value="Adjektiv"
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Adjektiv')}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="Adjektiv">Adjektiv</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="Adverb" name="worttyp" value="Adverb"
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Adverb')}
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="Adverb">Adverb</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="AdverbialeBestimmung" name="worttyp" value="Adverbiale Bestimmung"
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Adverbiale Bestimmung')}
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="AdverbialeBestimmung">Adverbiale Bestimmung</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="Ausdruck" name="worttyp" value="Ausdruck"
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Ausdruck')}
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="Ausdruck">Ausdruck</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="Konjunktion" name="worttyp" value="Konjunktion"
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Konjunktion')}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="Konjunktion">Konjunktion</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="Nomen" name="worttyp" value="Nomen"
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Nomen')}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="Nomen">Nomen</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="Partizip" name="worttyp" value="Partizip"
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Partizip')}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="Partizip">Partizip</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="Präposition" name="worttyp" value="Präposition"
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Präposition')}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="Präposition">Präposition</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="Pronomen" name="worttyp" value="Pronomen"
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Pronomen')}
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="Pronomen">Pronomen</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="IntransitivesVerb" name="worttyp" value="Intransitives Verb"
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Intransitives Verb')}
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="IntransitivesVerb">Verb (Intransitiv)</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="ReflexivesVerb" name="worttyp" value="Reflexives Verb"
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Reflexives Verb')}
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="reflexivesVerb">Verb (Reflexiv)</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="TransitivesVerb" name="worttyp" value="Transitives Verb"
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Transitives Verb')}
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="TransitivesVerb">Verb (Transitiv)</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="UnpersönlichesVerb" name="worttyp" value="Unpersönliches Verb"
+                                        checked={newTypeOfWord.some(type => type.TypeOfWord === 'Unpersönliches Verb')}
+                                        onChange={(e) => handleCheckboxChange(e, e.target.value)}
+                                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500" />
+                                    <label htmlFor="UnpersönlichesVerb">Verb (Unpersönlich)</label>
+                                </div>
+                            </div>
+                            <div className="bg-blue-100 mb-5 rounded-md">
+                                <div>
+                                    <label
+                                        className="block text_md font-medium text-gray-700"
+                                    >
+                                        Französische Übersetzungen:
+                                    </label>
+                                </div>
+                                {translations.map((translation, index) => (
+                                    <div key={index} className="relative">
+                                        <div>
+                                            {index === 0 && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleAddTranslation();
+                                                    }}
+                                                    className="absolute right-1 top-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded-md"
+                                                >
+                                                    <FontAwesomeIcon icon={faPlus} className="fa-lg fa-fw" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <input
+                                                id={`translation_${index}`}
+                                                type="text"
+                                                onChange={(e) => handleTranslationChange(index, e.target.value)}
+                                                value={translation.Transl_F || ''}
+                                                className="mt-1 mb-0 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                                                style={{ height: '2.5rem' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            {index > 0 && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleRemoveTranslation(index);
+                                                    }}
+                                                    className="absolute right-1 top-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-2 rounded-md"
+                                                >
+                                                    <FontAwesomeIcon icon={faTimes} className="fa-lg fa-fw" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    {message && <Message message={message} />}
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            addDeutsch();
+                        }}
+                        className="mt-4 w-full px-4 py-2 rounded text-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                        <FontAwesomeIcon icon={faPaperPlane} className="mr-2 fa-lg fa-fw" />
+                    </button>
+                </form> */}
 
 
                 {summary.length > 0 && (
@@ -828,32 +1196,22 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
         <div className="relative">
                     {errorMessage && <Message message={errorMessage} />}
                     <input
-    disabled={
-        window.location.search.length > 0 || newTypeOfWordFilter !== ''
-    }
-    id="search"
-    type="text"
-    onFocus={handleFocus}
-    onBlur={handleBlur}
-    onChange={(e) => {
-        const inputValue = e.target.value;
-        setSearchInput(inputValue);
-
-        if (isRootSearch) {
-            updateRootSuggestions(inputValue); // Funktion für Stammwort-Suche
-        } else {
-            updateSuggestions(inputValue); // Funktion für globale Suche
-        }
-    }}
-    value={searchInput}
-    className={`mt-1 block w-full rounded-md border-2 'border-gray-400 focus:ring-indigo-500 focus:border-indigo-500' shadow-sm sm:text-sm px-3 py-2`}
-    style={{ height: '2.5rem' }}
-    placeholder={isRootSearch ? "Gib ein Stammwort ein..." : "Wortsuche..."} // Dynamischer Placeholder
-    autoComplete="off"
-    autofocus="none"
-    tabindex="-1"
-/>
-
+                        disabled={
+                            window.location.search.length > 0 || newTypeOfWordFilter !== ''
+                        }
+                        id="search"
+                        type="text"
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
+                        onChange={(e) => handleSearchChange(e)}
+                        value={searchInput}
+                        className={`mt-1 block w-full rounded-md border-2 'border-gray-400 focus:ring-indigo-500 focus:border-indigo-500' shadow-sm sm:text-sm px-3 py-2`}
+                        style={{ height: '2.5rem' }}
+                        placeholder="Wortsuche..."
+                        autoComplete="off"
+                        autofocus="none"
+                        tabindex="-1"
+                    />
                     {suggestions.length > 0 && (
                         <div className="z-30 absolute">
                             <div className="flex flex-wrap bg-white border border-gray-400 rounded shadow p-2 max-h-80 overflow-y-auto">
@@ -979,18 +1337,6 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                                         }`} />
                                 <label htmlFor="UnpersönlichesVerbFilter">Verb (Unpersönlich)</label>
                             </div>
-                            <div>
-    <input
-        type="checkbox"
-        id="RootSearchFilter"
-        name="rootSearchFilter"
-        checked={isRootSearch}
-        onChange={(e) => setIsRootSearch(e.target.checked)}
-        className={`mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500`}
-    />
-    <label htmlFor="RootSearchFilter">Nach Stamm suchen</label>
-</div>
-
                         </div>
                     </div>
                     <div className="flex justify-between items-center mb-4">
