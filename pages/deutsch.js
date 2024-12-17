@@ -177,16 +177,22 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
     const updateRootSuggestions = (inputValue) => {
         if (filteredDeutsch && filteredDeutsch.length > 0) {
             // Zähle die Duplikate basierend auf dem Root-Feld
-            const duplicatesCount = filteredDeutsch.reduce((countMap, item) => {
+            const validData = filteredDeutsch.filter(item => {
+                return item.hasOwnProperty('Root') && item.Root !== null && item.Root !== undefined && item.Root.trim() !== "";
+            });            
+            
+            const duplicatesCount = validData.reduce((countMap, item) => {
                 const root = item?.Root;
-                if (root && root.toLowerCase().includes(inputValue.toLowerCase())) {
+                if (root.toLowerCase().includes(inputValue.toLowerCase())) {
                     countMap[root] = (countMap[root] || 0) + 1;
                 }
                 return countMap;
             }, {});
     
             // Erstelle die Vorschlagsliste
-            const filteredResults = Object.keys(duplicatesCount).map((root) => ({
+            const filteredResults = Object.keys(duplicatesCount)
+            .filter(root => root && root.trim() !== "")
+            .map((root) => ({
                 Word: `${root} (${duplicatesCount[root]})`, // Anzeige wie in der globalen Suche
             }));
     
@@ -222,7 +228,23 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
     const handleFocus = () => {
         if (searchInput) {
             setSuggestions(filteredSuggestions);
+        } else if (isRootSearch) {
+            // Nur Vorschläge basierend auf Root anzeigen
+            const duplicatesCount = filteredDeutsch.reduce((countMap, item) => {
+                const root = item?.Root;
+                if (root) {
+                    countMap[root] = (countMap[root] || 0) + 1;
+                }
+                return countMap;
+            }, {});
+    
+            const filteredResults = Object.keys(duplicatesCount).map((root) => ({
+                Word: `${root} (${duplicatesCount[root]})`,
+            }));
+    
+            setSuggestions(filteredResults);
         } else {
+            // Standard: Vorschläge basierend auf Word anzeigen
             const duplicatesCount = filteredDeutsch.reduce((countMap, item) => {
                 const word = item?.Word;
                 if (word) {
@@ -230,16 +252,21 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
                 }
                 return countMap;
             }, {});
-
-            const filteredResults = Object.keys(duplicatesCount).map((word) => {
-                const count = duplicatesCount[word];
-                return {
-                    Word: `${word} (${count})`,
-                };
-            });
+    
+            const filteredResults = Object.keys(duplicatesCount).map((word) => ({
+                Word: `${word} (${duplicatesCount[word]})`,
+            }));
+    
             setSuggestions(filteredResults);
         }
     };
+    
+    
+    const handleRootSearchToggle = (e) => {
+        const isChecked = e.target.checked;
+        setIsRootSearch(isChecked); // Setze den Zustand
+    };
+    
 
     const handleBlur = () => {
         setTimeout(() => {
@@ -363,6 +390,8 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
         setOKTrigger(prevTrigger => prevTrigger + 1)
     };
 
+
+    
     useEffect(() => {
         if (OKTrigger > 0) {
             if (standingExists == null) {
@@ -988,7 +1017,7 @@ export default function Deutsch({ deutschCount, deutsch, standingSums, summary, 
         id="RootSearchFilter"
         name="Root"
         checked={isRootSearch}
-        onChange={(e) => setIsRootSearch(e.target.checked)}
+        onChange={handleRootSearchToggle}
         className={`mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500`}
     />
     <label htmlFor="RootSearchFilter">Nach Stamm suchen</label>

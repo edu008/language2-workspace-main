@@ -406,7 +406,7 @@ export default function Deutsch({ summary, filteredDeutsch }) {
                             <div className="mb-5">
                                 <div>
                                     <label htmlFor="root" className="block text_md font-medium text-gray-700">
-                                        Wurzel:
+                                        Stamm:
                                     </label>
                                 </div>
                                 <div>
