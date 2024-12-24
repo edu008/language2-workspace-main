@@ -1,6 +1,7 @@
 import {
     getDeutsch,
-    createDeutsch
+    createDeutsch,
+    updateDeutsch
   } from '../../prisma/deutsch'
   
   export default async function handle(req, res) {
@@ -15,6 +16,12 @@ import {
             const de = await createDeutsch(Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word)
             return res.json(de)
         }
+      
+      case 'PUT': {
+        const { Id,Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word } = req.body
+          const de = await updateDeutsch(Id, Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word)
+          return res.json(de)
+      }
         default:
           break
       }

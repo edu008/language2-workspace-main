@@ -121,6 +121,7 @@ export default function Deutsch({ summary, filteredDeutsch }) {
     const { data: session } = useSession()
     const router = useRouter();
     const [newArtikel, setNewArtikel] = useState("");
+    const [Id, setId] = useState("");
     const [newDefinition, setNewDefinition] = useState("");
     const [newPrefix, setNewPrefix] = useState("");
     const [newStructure, setNewStructure] = useState("");
@@ -137,36 +138,31 @@ export default function Deutsch({ summary, filteredDeutsch }) {
     const [suggestions, setSuggestions] = useState([]);
     const [filteredSuggestions, setFilteredSuggestions] = useState([]);
     const [newTypeOfWordFilter, setNewTypeOfWordFilter] = useState("");
+    const [searchInput, setSearchInput] = useState('');
+    const [suggestion, setSuggestion] = useState(null);
+
 
     console.log(summary)
 
 
     const updateSuggestions = (inputValue) => {
         if (filteredDeutsch && filteredDeutsch.length > 0) {
-            const duplicatesCount = filteredDeutsch.reduce((countMap, item) => {
-                const word = item?.Word;
-                if (word && word.toLowerCase().includes(inputValue.toLowerCase())) {
-                    countMap[word] = (countMap[word] || 0) + 1;
-                }
-                return countMap;
-            }, {});
-
-            const filteredResults = Object.keys(duplicatesCount).map((word) => {
-                const count = duplicatesCount[word];
-                return {
-                    Word: `${word} (${count})`,
-                };
-            });
-
+            // Filtere nur die Elemente basierend auf dem Eingabewert
+            const filteredResults = filteredDeutsch.filter((item) =>
+                item?.Word?.toLowerCase().includes(inputValue.toLowerCase())
+            );
+    
+            // Aktualisiere die Vorschläge mit den gefilterten Ergebnissen
             setSuggestions(filteredResults);
             setFilteredSuggestions(filteredResults);
-
+    
+            // Überprüfe, ob ein exakter Treffer existiert
             const matchingEntries = filteredDeutsch.filter(
                 (item) =>
                     item?.Word &&
                     item.Word.toLowerCase() === inputValue.toLowerCase()
             );
-
+    
             if (matchingEntries.length === 0 && inputValue !== "") {
                 setErrorMessage(
                     'Dieses Wort ist nicht erfasst oder du hast es bereits vollständig erlernt!'
@@ -179,6 +175,7 @@ export default function Deutsch({ summary, filteredDeutsch }) {
             setSuggestions([]);
         }
     };
+    
 
        
 
@@ -309,8 +306,82 @@ export default function Deutsch({ summary, filteredDeutsch }) {
             refreshPage()
         }
     }
+    const updateDeutsch = async () => {
+        if (newArtikel === null || newDefinition === null || newDefinition === '' || newPrefix === null || newPrefix === '' || newStructure === null || newStructure === '' || translations.some((translation) => translation.Transl_F === '') ||
+            articles.some((article) => article.TitleOfArticle === '') || articles.some((article) => article.Sentence_D === '') || articles.some((article) => article.Source === '') || articles.some((article) => article.DateSource === '') ||
+            newTypeOfWord.length === 0 || newWord === null || newWord === '' || newRoot === null || newRoot === '') {
+            setMessage("Fülle bitte alle Felder aus!");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+        } else {
+            const updatedArticles = articles.map((article) => ({
+                ...article,
+                DateSource: new Date(article.DateSource),
+            }));
+            await fetch('/api/deutsch', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Id: Id,
+                    Artikel: newArtikel,
+                    Word: newWord,
+                    Prefix: newPrefix,
+                    Root: newRoot,
+                    Structure: newStructure,
+                    TypeOfWord: newTypeOfWord,
+                    Definition: newDefinition,
+                    Transl_F: translations,
+                    Article: updatedArticles,
+                })
+            })
+                .then(res => res.json())
+            resetForm();
+            setMessage("Erfolgreich hinzugefügt!");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+            refreshPage()
+        }
+    }
+    const handleFocus = () => {
+        resetForm()
+        setTimeout(() => 10000);
+        refreshPage()
+        if (searchInput) {
+            setSuggestions(filteredSuggestions);
+        
+        } else {
+            // Standard: Vorschläge basierend auf Word anzeigen
+            const duplicatesCount = filteredDeutsch.reduce((countMap, item) => {
+                const word = item?.Word;
+                if (word) {
+                    countMap[word] = (countMap[word] || 0) + 1;
+                }
+                return countMap;
+            }, {});
+    
+            const filteredResults = Object.keys(duplicatesCount).map((word) => ({
+                Word: `${word} (${duplicatesCount[word]})`,
+            }));
+    
+            setSuggestions(filteredDeutsch);
+        }
+    };
+    const handleBlur = () => {
+        setTimeout(() => {
+            setSuggestions([]);
+        }, 200);
+    };
+    const handleSuggestionClick = (item) => {
+        console.log(item); // Debugging
+        setSuggestion(item); // Setzt die aktuelle Suggestion in den State
+        setForm(item); // Befüllt das Formular mit den Daten der Suggestion
+    };
+    
 
     const resetForm = () => {
+        setSuggestion(null); // Reset auf null
         setTranslations([{ Transl_F: '' }]);
         setArticles([{ TitleOfArticle: '', Sentence_D: '', Source: '', DateSource: '' }]);
         setNewArtikel('');
@@ -341,7 +412,36 @@ export default function Deutsch({ summary, filteredDeutsch }) {
         document.getElementById("Partizip").checked = false;
         document.getElementById("UnpersönlichesVerb").checked = false;
     }
-
+    const setForm = (item) => {
+        setTranslations(item.Transl_F || [{ Transl_F: '' }]); // Übersetzungen setzen
+        setArticles(item.Article || [{ TitleOfArticle: '', Sentence_D: '', Source: '', DateSource: '' }]); // Artikel setzen
+        setId(item.id || '');
+        setNewArtikel(item.Artikel || '');
+        setNewWord(item.Word || '');
+        setNewPrefix(item.Prefix || '');
+        setNewRoot(item.Root || '');
+        setNewStructure(item.Structure || '');
+        setNewDefinition(item.Definition || '');
+    
+        if (item.Artikel === "der") {
+            document.getElementById("der").checked = true;
+        } else if (item.Artikel === "die") {
+            document.getElementById("die").checked = true;
+        } else if (item.Artikel === "das") {
+            document.getElementById("das").checked = true;
+        } else {
+            document.getElementById("keiner").checked = true;
+        }
+    
+        // Worttyp setzen
+        if (item.TypeOfWord && item.TypeOfWord.length > 0) {
+            setNewTypeOfWord(item.TypeOfWord); // Array der Worttypen direkt setzen
+        } else {
+            setNewTypeOfWord([]); // Leeres Array, falls kein Typ vorhanden ist
+        }
+    };
+    
+    
     
 
     if (session) {
@@ -370,6 +470,49 @@ export default function Deutsch({ summary, filteredDeutsch }) {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <div className="mb-5">
+                                <div>
+                                    <label htmlFor="word" className="block text_md font-medium text-gray-700">
+                                        Wort zum editieren eingeben:
+                                    </label>
+                                </div>
+                                <input
+    disabled={
+        window.location.search.length > 0 || (newTypeOfWordFilter !== '')
+    }
+    id="search"
+    type="text"
+    onFocus={handleFocus}
+    onBlur={handleBlur}
+    onChange={(e) => {
+        const inputValue = e.target.value;
+        setSearchInput(inputValue);
+        updateSuggestions(inputValue)
+
+    }}
+    value={searchInput}
+    className={`mt-1 block w-full rounded-md border-2 'border-gray-400 focus:ring-indigo-500 focus:border-indigo-500' shadow-sm sm:text-sm px-3 py-2`}
+    style={{ height: '2.5rem' }}
+    autoComplete="off"
+    autofocus="none"
+    tabindex="-1"
+/>
+{suggestions.length > 0 && (
+                        <div className="z-30 absolute">
+                            <div className="flex flex-wrap bg-white border border-gray-400 rounded shadow p-2 max-h-80 overflow-y-auto">
+                                {suggestions
+                                    .sort((a, b) => (a.Word && b.Word ? a.Word.localeCompare(b.Word) : 0))
+                                    .map((item, index) => (
+                                        <div
+                                            key={index}
+                                            onClick={() => handleSuggestionClick(item)}
+                                            className="cursor-pointer mr-4 mb-4 p-2 border border-gray-300 rounded bg-gray-100"
+                                        >
+                                            {item.Word}
+                                        </div>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
                                 <div>
                                     <label htmlFor="word" className="block text_md font-medium text-gray-700">
                                         Wort:
@@ -735,11 +878,19 @@ export default function Deutsch({ summary, filteredDeutsch }) {
                             </div>
                         </div>
                     </div>
+
+
+
                     {message && <Message message={message} />}
                     <button
                         onClick={(e) => {
                             e.preventDefault();
-                            addDeutsch();
+                            if (!suggestion || Object.keys(suggestion).length === 0) {
+                                addDeutsch(); // Neue Daten hinzufügen
+                            } else {
+                                updateDeutsch(); // Bestehende Daten aktualisieren
+                            }
+     
                         }}
                         className="mt-4 w-full px-4 py-2 rounded text-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700"
                     >
