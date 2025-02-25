@@ -1,0 +1,52 @@
+.cardContainer {
+  /* Entferne das widersprüchliche w-full max-w-[350px] */
+  /* Stattdessen definieren wir nur min-width und min-height */
+
+  min-width: 800px; /* Die Karte wird nicht schmaler als 400px */
+  min-height: 400px; /* Die Karte wird nicht niedriger als 400px */
+
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background-color: #f0f4ff; /* Sanftes Blau für den Hintergrund */
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db; /* Leichter grauer Rand */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: box-shadow 300ms, transform 300ms;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.cardContainer:hover {
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+  transform: scale(1.03);
+}
+
+.cardContainer:active {
+  transform: scale(1);
+}
+
+/* Hintergrundfarbe für die Rückseite */
+.cardContainer.translation {
+  background-color: #e3e8ff; /* Etwas helleres Blau für Übersetzungsseite */
+}
+
+.topRightInfo {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.innerContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
