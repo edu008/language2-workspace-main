@@ -2,6 +2,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import styles from "../../styles/WordCard.module.css";
 
 export default function WordCard({ wordData, showTranslation, onFlip }) {
+  if (!wordData) {
+    return <div>Loading...</div>; // Display a loading message or a placeholder
+  }
+
   const formattedDate = wordData.dateEntryWord
     ? new Date(wordData.dateEntryWord).toLocaleDateString("de-DE")
     : "Datum nicht verfügbar";

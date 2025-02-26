@@ -1,9 +1,8 @@
-import prisma from './prisma'
+import prisma from './prisma';
 
 // CREATE
 export const createDeutsch = async (Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word) => {
   try {
-    // Validate input data
     if (!Word || typeof Word !== 'string') {
       throw new Error('Invalid Word');
     }
@@ -22,7 +21,6 @@ export const createDeutsch = async (Article, Artikel, Definition, Prefix, Root, 
 // UPDATE
 export const updateDeutsch = async (Id, Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word) => {
   try {
-    // Validate input data
     if (!Id || !Word || typeof Word !== 'string') {
       throw new Error('Invalid input');
     }
@@ -43,6 +41,7 @@ export const updateDeutsch = async (Id, Article, Artikel, Definition, Prefix, Ro
 export const getDeutsch = async () => {
   try {
     const deutsch = await prisma.deutschs.findMany();
+    console.log("getDeutsch result:", deutsch); // Debugging
     return deutsch;
   } catch (error) {
     console.error('Error fetching Deutsch:', error);
