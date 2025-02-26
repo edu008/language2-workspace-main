@@ -1,31 +1,29 @@
-// components/LoadingScreen.js
 import React, { useEffect, useLayoutEffect } from 'react';
 
 const LoadingScreen = ({ message = "Lade Spielstand...", isError = false }) => {
-  // Hydration-Fehler vermeiden, indem wir die Positionierung und Hintergrund nach Client-Rendering anpassen
   useLayoutEffect(() => {
     const loadingScreen = document.querySelector('.loading-screen');
     if (loadingScreen) {
       loadingScreen.style.position = 'fixed';
       loadingScreen.style.inset = '0';
-      loadingScreen.style.zIndex = '100'; // Erhöht, um sicherzustellen, dass es oben liegt
-      loadingScreen.style.background = 'transparent'; // Explizit transparent setzen
+      loadingScreen.style.zIndex = '200';
+      loadingScreen.style.background = 'rgba(255, 255, 255, 0.8)'; // Hintergrund auf weiß geändert
+      loadingScreen.style.backdropFilter = 'blur(20px)'; // Stärkeren verschwommenen Effekt hinzugefügt
     }
   }, []);
 
-  // CSS für die springenden Punkte (inline, oder in einer separaten CSS-Datei)
   const styles = `
     .container {
-      --uib-size: 80px; /* Größere Größe für die Animation */
-      --uib-color: #007bff; /* Blaue Farbe für die Punkte */
+      --uib-size: 80px;
+      --uib-color: #007bff;
       --uib-speed: 1s;
       --uib-dot-size: calc(var(--uib-size) * 0.18);
       display: flex;
       align-items: flex-end;
-      justify-content: center; /* Geändert auf center für bessere Zentrierung */
+      justify-content: center;
       height: calc(var(--uib-size) * 0.5);
       width: var(--uib-size);
-      margin-bottom: 2rem; /* Mehr Abstand mit Tailwind mb-8 */
+      margin-bottom: 2rem;
     }
 
     .dot {
@@ -35,7 +33,7 @@ const LoadingScreen = ({ message = "Lade Spielstand...", isError = false }) => {
       border-radius: 50%;
       background-color: var(--uib-color);
       transition: background-color 0.3s ease;
-      opacity: 1; /* Volle Deckkraft für die Punkte, um Sichtbarkeit zu gewährleisten */
+      opacity: 1;
     }
 
     .dot:nth-child(1) {
@@ -66,26 +64,22 @@ const LoadingScreen = ({ message = "Lade Spielstand...", isError = false }) => {
   `;
 
   return (
-    <div className="loading-screen fixed inset-0 bg-transparent opacity-0 z-100 flex justify-center items-center">
-      {/* Integriere die CSS-Styles als Style-Tag oder in einer separaten CSS-Datei */}
+    <div className="loading-screen fixed inset-0 flex justify-center items-center">
       <style>{styles}</style>
-      {/* Container für die springenden Punkte, zentriert und größer */}
       <div className="flex flex-col items-center">
-        <div className="container mb-8"> {/* Mehr Abstand unten mit mb-8 */}
+        <div className="container mb-8">
           <div className="dot"></div>
           <div className="dot"></div>
           <div className="dot"></div>
           <div className="dot"></div>
         </div>
-        {/* Nachricht oder Fehlermeldung, größer und zentriert, mit voller Opacity */}
-        <p className={`text-gray-700 text-2xl font-bold opacity-100 ${isError ? 'text-red-500' : ''}`}>
+        <p className={`text-black text-2xl font-bold ${isError ? 'text-red-500' : ''}`}>
           {message}
         </p>
-        {/* Optional: Button zum Wiederholen bei Fehler, größer und zentriert, mit voller Opacity */}
         {isError && (
           <button
-            className="mt-6 px-6 py-3 bg-blue-500 text-white text-lg rounded hover:bg-blue-600 opacity-100"
-            onClick={() => window.location.reload()} // Beispiel: Seite neu laden, kann angepasst werden
+            className="mt-6 px-6 py-3 bg-blue-500 text-white text-lg rounded hover:bg-blue-600"
+            onClick={() => window.location.reload()}
           >
             Erneut versuchen
           </button>

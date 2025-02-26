@@ -90,7 +90,7 @@ export default function Deutsch({ deutschCount, deutsch }) {
 
   // Verhindere Hydration-Fehler, indem wir den initialen Zustand nur auf dem Client setzen
   useEffect(() => {
-    if (status === "authenticated" && !isDataLoaded) {
+    if (typeof window !== 'undefined' && status === "authenticated" && !isDataLoaded) {
       loadStanding();
     }
   }, [status, isDataLoaded]);
@@ -350,160 +350,99 @@ export default function Deutsch({ deutschCount, deutsch }) {
 
   const handleOK = async () => {
     if (!currentDeutsch || isApplyingFilters) return;
-
+  
     setIsApplyingFilters(true);
     try {
       const exercise = currentDeutsch.id;
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
-
-      const standing = await fetch(
+  
+      let standing = await fetch(
         `/api/standing?user=${encodeURIComponent(session.user.email)}&exercise=${encodeURIComponent(exercise)}`
       ).then(res => res.json()).catch(error => {
         console.error("Fehler beim Abrufen des Standing:", error);
-        return null; // Rückgabe null, wenn die Anfrage fehlschlägt
+        return null;
       });
-
-      let correct = 0; // Initialisiere mit 0 (nicht korrekt)
-      if (standing) {
-        correct = standing.correct + 1; // Erhöhe um 1 (1: einmal korrekt, 2: gelernt)
-        if (correct > 2) correct = 2; // Begrenze auf 2 (gelernt)
-      } else {
-        correct = 1; // Setze auf 1 für den ersten korrekten Klick
-      }
-
-      // Sicherstellen, dass correct ein gültiger Int-Wert ist
+  
+      let correct = standing ? Math.min((standing.correct || 0) + 1, 2) : 1;
+  
       if (!Number.isInteger(correct) || correct < 0 || correct > 2) {
         console.error("Ungültiger Wert für correct in handleOK:", correct);
-        correct = 1; // Fallback auf 1 für den ersten OK-Klick, wenn der Wert ungültig ist
+        correct = 1; // Sicherstellen, dass es immer 1 oder 2 ist
       }
-
-      console.log("Correct before save in handleOK:", correct); // Debugging-Log
-
-      if (standing) {
-        await saveToServer("OK", {
-          exercise,
-          standingId: standing.id,
-          correct,
-          attempts: newAttempts,
-        });
-        // Wort wurde gelernt, entferne es aus untrained und repeatPool
-        if (correct === 2) {
-          setTrained((prev) => prev + 1);
-          setUntrained(untrained.filter(word => word.id !== exercise));
-          setRepeatPool(repeatPool.filter(word => word.id !== exercise));
-        } else {
-          // Wenn correct < 2, behalte das Wort in repeatPool oder untrained
-          setUntrained(untrained.filter(word => word.id !== exercise)); // Entferne aus untrained, falls vorhanden
-          const isInRepeatPool = repeatPool.some(word => word.id === exercise);
-          if (!isInRepeatPool) {
-            setRepeatPool([...repeatPool, currentDeutsch]); // Füge zu repeatPool hinzu, wenn nicht schon vorhanden
-          }
+  
+      await saveToServer("OK", {
+        exercise,
+        standingId: standing?.id,
+        correct,
+        attempts: newAttempts,
+      });
+  
+      setUntrained(prev => prev.filter(word => word.id !== exercise));
+      setRepeatPool(prev => (correct < 2 ? [...prev, currentDeutsch] : prev));
+  
+      if (correct === 2) setTrained(prev => prev + 1);
+  
+      const newEntry = {
+        Word: currentDeutsch.Word,
+        Artikel: currentDeutsch.Artikel || "",
+        Transl_F: currentDeutsch.Transl_F.map(t => t.Transl_F).join("; "),
+        DateEntryWord: new Date(currentDeutsch.DateEntryWord).toLocaleDateString("de-DE"),
+      };
+  
+      setStandingSummary(prev => {
+        if (!prev.some(entry => entry.Word === newEntry.Word)) {
+          return [...prev, newEntry];
         }
-      } else {
-        await saveToServer("OK", {
-          exercise,
-          correct,
-          attempts: newAttempts,
-        });
-        // Behalte das Wort in repeatPool, wenn correct < 2
-        setUntrained(untrained.filter(word => word.id !== exercise)); // Entferne aus untrained
-        setRepeatPool([...repeatPool, currentDeutsch]); // Füge zu repeatPool hinzu
-      }
-
-      setSummary((prev) => [
-        ...prev,
-        {
-          summary: {
-            ...currentDeutsch,
-            DateEntryWord: new Date(currentDeutsch.DateEntryWord).toLocaleDateString("de-DE"),
-            Transl_F: currentDeutsch.Transl_F.map(t => t.Transl_F).join("; "), // Konvertiere Transl_F in String mit "; " als Trennzeichen
-          },
-        },
-      ]);
-
-      // Warte, bis der Server-Stand geladen ist, bevor wir filtern
-      await new Promise(resolve => setTimeout(resolve, 300)); // Erhöhte Verzögerung auf 300ms
-      await applyFilters(); // Warte auf die asynchrone Ausführung von applyFilters
+        return prev;
+      });
+  
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await applyFilters();
     } finally {
       setIsApplyingFilters(false);
     }
   };
+  
 
   const handleNOK = async () => {
     if (!currentDeutsch || isApplyingFilters) return;
-
+  
     setIsApplyingFilters(true);
     try {
       const exercise = currentDeutsch.id;
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
-
-      const standing = await fetch(
-        `/api/standing?user=${encodeURIComponent(session.user.email)}&exercise=${encodeURIComponent(exercise)}`
-      ).then(res => res.json()).catch(error => {
-        console.error("Fehler beim Abrufen des Standing:", error);
-        return null; // Rückgabe null, wenn die Anfrage fehlschlägt
+  
+      await saveToServer("NOK", {
+        exercise,
+        attempts: newAttempts,
       });
-
-      let correct = 0; // Setze auf 0 (nicht korrekt)
-      if (standing) {
-        correct = 0; // Setze auf 0, wenn NOK geklickt wird, unabhängig vom aktuellen Wert
-      }
-
-      // Sicherstellen, dass correct ein gültiger Int-Wert ist
-      if (!Number.isInteger(correct) || correct < 0 || correct > 2) {
-        console.error("Ungültiger Wert für correct in handleNOK:", correct);
-        correct = 0; // Fallback auf 0, wenn der Wert ungültig ist
-      }
-
-      console.log("Correct before save in handleNOK:", correct); // Debugging-Log
-
-      if (standing) {
-        await saveToServer("NOK", {
-          exercise,
-          standingId: standing.id,
-          correct,
-          attempts: newAttempts,
-        });
-        // Bei NOK bleibt das Wort in untrained oder repeatPool, wenn correct < 2
-        const isInUntrained = untrained.some(word => word.id === exercise);
-        const isInRepeatPool = repeatPool.some(word => word.id === exercise);
-        if (!isInUntrained) {
-          setUntrained([...untrained, currentDeutsch]); // Füge zu untrained hinzu, wenn nicht schon vorhanden
+  
+      setUntrained(prev => [...prev, currentDeutsch]);
+      setRepeatPool(prev => prev.filter(word => word.id !== exercise));
+  
+      const newEntry = {
+        Word: currentDeutsch.Word,
+        Artikel: currentDeutsch.Artikel || "",
+        Transl_F: currentDeutsch.Transl_F.map(t => t.Transl_F).join("; "),
+        DateEntryWord: new Date(currentDeutsch.DateEntryWord).toLocaleDateString("de-DE"),
+      };
+  
+      setStandingSummary(prev => {
+        if (!prev.some(entry => entry.Word === newEntry.Word)) {
+          return [...prev, newEntry];
         }
-        if (isInRepeatPool) {
-          setRepeatPool(repeatPool.filter(word => word.id !== exercise)); // Entferne aus repeatPool, falls vorhanden
-        }
-      } else {
-        await saveToServer("NOK", {
-          exercise,
-          correct,
-          attempts: newAttempts,
-        });
-        // Füge das Wort zu untrained hinzu, wenn correct < 2
-        setUntrained([...untrained, currentDeutsch]); // Füge zu untrained hinzu
-        setRepeatPool(repeatPool.filter(word => word.id !== exercise)); // Entferne aus repeatPool, falls vorhanden
-      }
-
-      setSummary((prev) => [
-        ...prev,
-        {
-          summary: {
-            ...currentDeutsch,
-            DateEntryWord: new Date(currentDeutsch.DateEntryWord).toLocaleDateString("de-DE"),
-            Transl_F: currentDeutsch.Transl_F.map(t => t.Transl_F).join("; "), // Konvertiere Transl_F in String mit "; " als Trennzeichen
-          },
-        },
-      ]);
-
-      // Warte, bis der Server-Stand geladen ist, bevor wir filtern
-      await new Promise(resolve => setTimeout(resolve, 300)); // Erhöhte Verzögerung auf 300ms
-      await applyFilters(); // Warte auf die asynchrone Ausführung von applyFilters
+        return prev;
+      });
+  
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await applyFilters();
     } finally {
       setIsApplyingFilters(false);
     }
   };
+  
 
   const handleREV = async () => {
     if (!session || isApplyingFilters) return;
@@ -644,7 +583,7 @@ export default function Deutsch({ deutschCount, deutsch }) {
 
   // Verhindere Hydration-Fehler, indem wir den initialen Zustand nur auf dem Client setzen
   useEffect(() => {
-    if (status === "authenticated" && !isDataLoaded) {
+    if (typeof window !== 'undefined' && status === "authenticated" && !isDataLoaded) {
       loadStanding();
     }
   }, [status, isDataLoaded]);
@@ -664,223 +603,224 @@ export default function Deutsch({ deutschCount, deutsch }) {
       <Head>
         <title>Wortbedeutungen</title>
       </Head>
-      <Header session={session} />
-      <div className="flex justify-between items-center w-full p-6">
-        <div className="w-[300px]" />
-        <h1 className="text-5xl font-bold text-center flex-1">Wortbedeutungen</h1>
-        <button
-          onClick={handleOpen}
-          className="py-2 px-4 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold text-sm"
-        >
-          Filter
-        </button>
-      </div>
-      <div className="max-w-5xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
-        {currentDeutsch ? (
-          <WordCard
-            wordData={{
-              article: currentDeutsch.Artikel,
-              word: currentDeutsch.Word,
-              prefix: currentDeutsch.Prefix,
-              root: currentDeutsch.Root,
-              structure: currentDeutsch.Structure,
-              typeOfWord: currentDeutsch.TypeOfWord.map((t) => t.TypeOfWord),
-              additionalInfo: currentDeutsch.Root,
-              translation: currentDeutsch.Transl_F.map((t) => t.Transl_F).join("; "),
-              examples: currentDeutsch.Article.map((a) => ({
-                sentence: a.Sentence_D,
-                source: `${a.Source}${a.TitleOfArticle ? ` ("${a.TitleOfArticle}"${a.DateSource ? ", " + new Date(a.DateSource).toLocaleDateString() : ""})` : ""}`,
-              })),
-              dateEntryWord: currentDeutsch.DateEntryWord,
-            }}
-            showTranslation={showTranslation}
-            onFlip={() => setShowTranslation(!showTranslation)}
-          />
-        ) : (
-          <div>Keine Wörter verfügbar. Alle Wörter wurden gelernt!</div>
-        )}
-        <ActionButtons
-          onCorrect={() => debouncedHandleClick(handleOK)}
-          onIncorrect={() => debouncedHandleClick(handleNOK)}
-          isLoading={isApplyingFilters}
-        />
-        <Stats
-          totalCount={deutschCount}
-          trainedCount={trained}
-          attempts={attempts}
-          progress={progress}
-        />
-        <div className="flex justify-center mt-4">
-          <button
-            className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded text-2xl"
-            onClick={() => debouncedHandleClick(handleREV)}
-          >
-            <FontAwesomeIcon icon={faTrashRestore} className="mr-2 fa-lg fa-fw" />
-          </button>
-        </div>
-        {/* Kombinierte Anzeige der Summary aus Sitzung und Datenbank */}
-        {(summary.length > 0 || standingSummary.length > 0) && (
-          <div className="mt-8">
-            <h1 className="text-2xl font-bold mb-4">Zusammenfassung der laufenden Übungssession</h1>
-            <table className="table-auto w-full">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2">Artikel</th>
-                  <th className="px-4 py-2">Wort</th>
-                  <th className="px-4 py-2">Französische Übersetzung</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...standingSummary, ...summary].map((item, index) => {
-                  const deutsch = item.summary || item; // Entweder aus standingSummary oder summary
-                  if (!deutsch) return null;
-                  return (
-                    <tr key={index}>
-                      <td className="border px-4 py-2">{deutsch.Artikel}</td>
-                      <td className="border px-4 py-2">{deutsch.Word}</td>
-                      <td className="border px-4 py-2">
-                        {typeof deutsch.Transl_F === "string" ? deutsch.Transl_F : (deutsch.Transl_F || []).map(t => t.Transl_F).join("; ")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {session && (
+        <>
+          <Header session={session} />
+          <main className="flex justify-end items-start w-full p-6 z-0" style={{ marginTop: '96px' }}> {/* Inline-Style für Margin-Top von 96px (entspricht mt-24) */}
+          <div className="flex gap-4">
+            <button
+              onClick={handleOpen}
+              className="py-2 px-4 rounded-md bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold text-sm flex items-center gap-2"
+            >
+              <FontAwesomeIcon icon={faFilter} />
+              Filter
+            </button>
+            <button
+              onClick={handleREV}
+              className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 text-white font-bold text-sm flex items-center gap-2"
+            >
+              <FontAwesomeIcon icon={faTrashRestore} />
+              Alle Daten löschen
+            </button>
           </div>
-        )}
-      </div>
-      <Dialog open={open} handler={handleOpen}>
-        <DialogHeader>Filter</DialogHeader>
-        <DialogBody>
-          <div className="relative">
-            {errorMessage && <Message message={errorMessage} />}
-            <input
-              id="search"
-              type="text"
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              onChange={handleSearchChange}
-              value={searchInput}
-              className="mt-1 block w-full rounded-md border-2 border-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-              style={{ height: "2.5rem" }}
-              placeholder={isRootSearch ? "Gib ein Stammwort ein..." : "Wortsuche..."}
-              autoComplete="off"
-            />
-            {suggestions.length > 0 && (
-              <div className="z-30 absolute">
-                <div className="flex flex-wrap bg-white border border-gray-400 rounded shadow p-2 max-h-80 overflow-y-auto">
-                  {suggestions
-                    .sort((a, b) => (a.Word && b.Word ? a.Word.localeCompare(b.Word) : 0))
-                    .map((item, index) => (
-                      <div
-                        key={index}
-                        onClick={() => handleSuggestionClick(item.Word)}
-                        className="cursor-pointer mr-4 mb-4 p-2 border border-gray-300 rounded bg-gray-100"
-                      >
-                        {item.Word}
+        </main>
+
+<div className="max-w-5xl mx-auto py-2 px-4 sm:px-6 lg:px-8" style={{ minHeight: "800px", display: "flex", flexDirection: "column", gap: "1rem" }}>
+  {currentDeutsch ? (
+    <WordCard
+      wordData={{
+        article: currentDeutsch.Artikel,
+        word: currentDeutsch.Word,
+        prefix: currentDeutsch.Prefix,
+        root: currentDeutsch.Root,
+        structure: currentDeutsch.Structure,
+        typeOfWord: currentDeutsch.TypeOfWord.map((t) => t.TypeOfWord),
+        additionalInfo: currentDeutsch.Root,
+        translation: currentDeutsch.Transl_F.map((t) => t.Transl_F).join("; "),
+        examples: currentDeutsch.Article.map((a) => ({
+          sentence: a.Sentence_D,
+          source: `${a.Source}${a.TitleOfArticle ? ` ("${a.TitleOfArticle}"${a.DateSource ? ", " + new Date(a.DateSource).toLocaleDateString() : ""})` : ""}`,
+        })),
+        dateEntryWord: currentDeutsch.DateEntryWord,
+      }}
+      showTranslation={showTranslation}
+      onFlip={() => setShowTranslation(!showTranslation)}
+    />
+  ) : (
+    <div>Keine Wörter verfügbar. Alle Wörter wurden gelernt!</div>
+  )}
+  <div className="mt-4" style={{ minHeight: "100px" }}>
+    <ActionButtons
+      onCorrect={() => debouncedHandleClick(handleOK)}
+      onIncorrect={() => debouncedHandleClick(handleNOK)}
+      isLoading={isApplyingFilters}
+    />
+  </div>
+  <div className="mt-4" style={{ minHeight: "50px" }}>
+    <Stats
+      totalCount={deutschCount}
+      trainedCount={trained}
+      attempts={attempts}
+      progress={progress}
+    />
+  </div>
+  {standingSummary.length > 0 && (
+    <table className="table-auto border-collapse border border-gray-300 mt-4 w-full bg-white">
+      <thead>
+        <tr className="bg-gray-100">
+          <th className="border border-gray-300 p-2 text-left">Wort</th>
+          <th className="border border-gray-300 p-2 text-left">Artikel</th>
+          <th className="border border-gray-300 p-2 text-left">Übersetzung</th>
+        </tr>
+      </thead>
+      <tbody>
+        {standingSummary.map((item, index) => (
+          <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+            <td className="border border-gray-300 p-2">{item.Word}</td>
+            <td className="border border-gray-300 p-2">{item.Artikel}</td>
+            <td className="border border-gray-300 p-2">{item.Transl_F}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+          <Dialog open={open} handler={handleOpen}>
+            <DialogHeader>Filter</DialogHeader>
+            <DialogBody>
+              <div className="relative">
+                {errorMessage && <Message message={errorMessage} />}
+                <input
+                  id="search"
+                  type="text"
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  onChange={handleSearchChange}
+                  value={searchInput}
+                  className="mt-1 block w-full rounded-md border-2 border-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                  style={{ height: "2.5rem" }}
+                  placeholder={isRootSearch ? "Gib ein Stammwort ein..." : "Wortsuche..."}
+                  autoComplete="off"
+                />
+                {suggestions.length > 0 && (
+                  <div className="z-30 absolute">
+                    <div className="flex flex-wrap bg-white border border-gray-400 rounded shadow p-2 max-h-80 overflow-y-auto">
+                      {suggestions
+                        .sort((a, b) => (a.Word && b.Word ? a.Word.localeCompare(b.Word) : 0))
+                        .map((item, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleSuggestionClick(item.Word)}
+                            className="cursor-pointer mr-4 mb-4 p-2 border border-gray-300 rounded bg-gray-100"
+                          >
+                            {item.Word}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-4">
+                  <label htmlFor="worttyp" className="block text-md font-medium text-gray-700">
+                    Wortartsuche:
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    {[
+                      "Adjektiv",
+                      "Adverb",
+                      "Ausdruck",
+                      "Konjunktion",
+                      "Nomen",
+                      "Partizip",
+                    ].map((type) => (
+                      <div key={type}>
+                        <input
+                          type="radio"
+                          id={`${type}Filter`}
+                          name="worttypFilter"
+                          value={type}
+                          checked={newTypeOfWordFilter === type}
+                          disabled={searchInput !== "" || isRootSearch}
+                          onChange={(e) => setNewTypeOfWordFilter(e.target.value)}
+                          className={`mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${
+                            (searchInput !== "" || isRootSearch) && "bg-gray-300"
+                          }`}
+                        />
+                        <label htmlFor={`${type}Filter`}>{type}</label>
                       </div>
                     ))}
+                  </div>
+                  <div>
+                    {[
+                      "Präposition",
+                      "Intransitives Verb",
+                      "Reflexives Verb",
+                      "Transitives Verb",
+                      "Unpersönliches Verb",
+                    ].map((type) => (
+                      <div key={type}>
+                        <input
+                          type="radio"
+                          id={`${type}Filter`}
+                          name="worttypFilter"
+                          value={type}
+                          checked={newTypeOfWordFilter === type}
+                          disabled={searchInput !== "" || isRootSearch}
+                          onChange={(e) => setNewTypeOfWordFilter(e.target.value)}
+                          className={`mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${
+                            (searchInput !== "" || isRootSearch) && "bg-gray-300"
+                          }`}
+                        />
+                        <label htmlFor={`${type}Filter`}>
+                          {type.startsWith("Verb") ? `Verb (${type.split(" ")[0]})` : type}
+                        </label>
+                      </div>
+                    ))}
+                    <div>
+                      <input
+                        type="checkbox"
+                        id="RootSearchFilter"
+                        name="Root"
+                        checked={isRootSearch}
+                        onChange={handleRootSearchToggle}
+                        className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500"
+                      />
+                      <label htmlFor="RootSearchFilter">Nach Stamm suchen</label>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center mb-4">
+                  <button
+                    onClick={handleFilterClick}
+                    className="flex-1 mr-4 mt-4 mb-4 w-full px-4 py-2 rounded text-2xl font-semibold text-white bg-blue-500 hover:bg-blue-700"
+                    disabled={isApplyingFilters}
+                  >
+                    <FontAwesomeIcon icon={faFilter} className="mr-2 fa-lg fa-fw" />
+                    Filter anwenden
+                  </button>
+                  <button
+                    className="flex-1 mt-4 mb-4 w-full px-4 py-2 rounded text-2xl font-semibold text-white bg-red-500 hover:bg-red-700"
+                    onClick={handleRemoveFilter}
+                    disabled={isApplyingFilters}
+                  >
+                    <FontAwesomeIcon icon={faTrashRestore} className="mr-2 fa-lg fa-fw" />
+                    Filter entfernen
+                  </button>
                 </div>
               </div>
-            )}
-            <div className="mt-4">
-              <label htmlFor="worttyp" className="block text-md font-medium text-gray-700">
-                Wortartsuche:
-              </label>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                {[
-                  "Adjektiv",
-                  "Adverb",
-                  "Ausdruck",
-                  "Konjunktion",
-                  "Nomen",
-                  "Partizip",
-                ].map((type) => (
-                  <div key={type}>
-                    <input
-                      type="radio"
-                      id={`${type}Filter`}
-                      name="worttypFilter"
-                      value={type}
-                      checked={newTypeOfWordFilter === type}
-                      disabled={searchInput !== "" || isRootSearch}
-                      onChange={(e) => setNewTypeOfWordFilter(e.target.value)}
-                      className={`mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${
-                        (searchInput !== "" || isRootSearch) && "bg-gray-300"
-                      }`}
-                    />
-                    <label htmlFor={`${type}Filter`}>{type}</label>
-                  </div>
-                ))}
-              </div>
-              <div>
-                {[
-                  "Präposition",
-                  "Intransitives Verb",
-                  "Reflexives Verb",
-                  "Transitives Verb",
-                  "Unpersönliches Verb",
-                ].map((type) => (
-                  <div key={type}>
-                    <input
-                      type="radio"
-                      id={`${type}Filter`}
-                      name="worttypFilter"
-                      value={type}
-                      checked={newTypeOfWordFilter === type}
-                      disabled={searchInput !== "" || isRootSearch}
-                      onChange={(e) => setNewTypeOfWordFilter(e.target.value)}
-                      className={`mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500 ${
-                        (searchInput !== "" || isRootSearch) && "bg-gray-300"
-                      }`}
-                    />
-                    <label htmlFor={`${type}Filter`}>
-                      {type.startsWith("Verb") ? `Verb (${type.split(" ")[0]})` : type}
-                    </label>
-                  </div>
-                ))}
-                <div>
-                  <input
-                    type="checkbox"
-                    id="RootSearchFilter"
-                    name="Root"
-                    checked={isRootSearch}
-                    onChange={handleRootSearchToggle}
-                    className="mr-2 appearance-none h-4 w-4 border border-gray-400 rounded-full checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-blue-500"
-                  />
-                  <label htmlFor="RootSearchFilter">Nach Stamm suchen</label>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-between items-center mb-4">
-              <button
-                onClick={handleFilterClick}
-                className="flex-1 mr-4 mt-4 mb-4 w-full px-4 py-2 rounded text-2xl font-semibold text-white bg-blue-500 hover:bg-blue-700"
-                disabled={!searchInput && !newTypeOfWordFilter}
-              >
-                <FontAwesomeIcon icon={faFilter} className="mr-2 fa-lg fa-fw" />
-              </button>
-              <button
-                className="flex-1 mt-4 mb-4 w-full px-4 py-2 rounded text-2xl font-semibold text-white bg-red-500 hover:bg-red-700"
-                onClick={handleRemoveFilter}
-                disabled={!searchInput && !newTypeOfWordFilter}
-              >
-                <FontAwesomeIcon icon={faFilter} className="mr-2 fa-lg fa-fw" />
-              </button>
-            </div>
-          </div>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="text" color="red" onClick={handleOpen} className="mr-1">
-            <span>Cancel</span>
-          </Button>
-          <Button variant="gradient" color="green" onClick={handleOpen}>
-            <span>Confirm</span>
-          </Button>
-        </DialogFooter>
-      </Dialog>
+            </DialogBody>
+            <DialogFooter>
+              <Button variant="text" color="red" onClick={handleOpen} className="mr-1">
+                <span>Abbrechen</span>
+              </Button>
+              <Button variant="gradient" color="green" onClick={handleOpen}>
+                <span>Bestätigen</span>
+              </Button>
+            </DialogFooter>
+          </Dialog>
+        </>
+      )}
     </>
   );
 }
