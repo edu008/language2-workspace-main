@@ -5,6 +5,8 @@ import LoadingScreen from '../components/deutsch/LoadingScreen';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { SessionProvider } from 'next-auth/react';
+import '../styles/globals.css';
+import '../styles/index.css';
 
 config.autoAddCss = false;
 

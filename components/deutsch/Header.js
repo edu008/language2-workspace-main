@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { signOut } from 'next-auth/react';
+import { signIn, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
@@ -13,47 +13,79 @@ export default function Header({ session }) {
 
   const pageTitles = {
     '/deutsch': 'Wortbedeutungen',
-    '/grammatik': 'Grammatik',
-    '/synonyme': 'Synonyme',
+    '/': 'Deutsch Lernen',
+    '/Worterfassung': 'Worterfassung',
   };
 
   const pageTitle = pageTitles[router.pathname] || 'Not Found';
 
   return (
     <header className="bg-white/80 backdrop-blur-sm fixed top-0 w-full z-200 h-20 border-b border-gray-200 shadow-md flex items-center">
-      <div className="max-w-6xl mx-auto px-8 sm:px-10 lg:px-12 w-full">
-        <div className="flex justify-between items-center h-full py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex justify-between items-center h-full py-2">
           {/* Linke Seite: Zurück-Button und Titel */}
-          <div className="flex items-center" style={{ gap: '40px' }}> {/* Inline-Style zum Testen */}
-            <button
-              onClick={handleUebungsauswahlClick}
-              className="p-4 rounded-md hover:bg-gray-100 transition-colors"
-            >
-              <FontAwesomeIcon icon={faArrowLeft} className="text-gray-600" style={{ height: '36px', width: '36px' }} /> {/* Inline-Style zum Testen */}
-            </button>
-            <h1 className="text-3xl font-bold text-gray-900">{pageTitle}</h1>
+          <div className="flex items-center gap-6">
+            {router.pathname !== '/' && ( // Zeige den Zurück-Button nur, wenn nicht auf der exakten Route "/"
+              <button
+                onClick={handleUebungsauswahlClick}
+                className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                <FontAwesomeIcon icon={faArrowLeft} className="text-gray-600" style={{ height: '24px', width: '24px' }} />
+              </button>
+            )}
+            <h1 className="text-2xl font-bold text-gray-900">
+              {pageTitle}
+            </h1>
           </div>
 
-          {/* Rechte Seite: Profilbild, Benutzername und Abmelden */}
-          <div className="flex items-center" style={{ gap: '40px' }}> {/* Inline-Style zum Testen */}
-            <div className="flex items-center" style={{ gap: '24px' }}>
-              {session?.user?.image && (
-                <Image
-                  src={session.user.image}
-                  alt={session.user.name}
-                  width={64}
-                  height={64}
-                  className="rounded-full"
-                />
-              )}
-              <p className="text-gray-700 text-xl font-medium">{session?.user?.name || 'Gast'}</p>
-            </div>
-            <button
-              className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-md text-xl"
-              onClick={() => signOut({ callbackUrl: '/' })}
-            >
-              Abmelden
-            </button>
+          {/* Rechte Seite: Profilbild/Benutzername und Anmelden/Abmelden */}
+          <div className="flex items-center gap-4">
+            {session ? (
+              <div className="flex items-center gap-3">
+                {session.user?.image && (
+                  <Image
+                    src={session.user.image}
+                    alt={session.user.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                  />
+                )}
+                <p className="text-gray-700 text-lg font-medium">
+                  {session.user?.name || 'Gast'}
+                </p>
+                <button
+                  className="text-red-600 hover:bg-gray-100 hover:text-black font-semibold text-lg flex items-center px-4 py-2 rounded-md transition-colors"
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-log-out header-icon"
+                    style={{ marginRight: '6px' }}
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" x2="9" y1="12" y2="12"></line>
+                  </svg>
+                  Abmelden
+                </button>
+              </div>
+            ) : (
+              <button
+                className="bg-blue-500 text-white hover:bg-blue-600 font-semibold text-lg px-4 py-2 rounded-md transition-colors"
+                onClick={() => signIn()}
+              >
+                Anmelden
+              </button>
+            )}
           </div>
         </div>
       </div>
