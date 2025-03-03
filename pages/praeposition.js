@@ -116,7 +116,296 @@ export default function Praeposition({ praepositionCount, praeposition, standing
             .catch(error => console.error(error));
         }
       }
+<<<<<<< Updated upstream
     });
+=======
+      const data = await response.json();
+      console.log("Standing Data Loaded:", data);
+
+      if (!data.summary || !Array.isArray(data.summary)) {
+        console.error("Keine oder ungültige summary-Daten erhalten:", data);
+        resetState();
+        setStandingSummary([]);
+        setIsDataLoaded(true);
+        return;
+      }
+
+      applyStandingToWords(data.summary);
+      setStandingSummary(data.summary.map(item => {
+        const p = praeposition.find(p => p.id === item.exercise);
+        return {
+          Satz: p?.Satz || "",
+          Loesung: p?.Loesung || "",
+          Datum: p ? new Date(p.Datum).toLocaleDateString("de-DE") : "",
+        };
+      }));
+      setLoadingError(null);
+    } catch (error) {
+      console.error("Fehler beim Laden des Standing:", error);
+      setLoadingError(error.message);
+      resetState();
+      setStandingSummary([]);
+      setIsDataLoaded(true);
+    }
+  };
+
+  const applyStandingToWords = (standing) => {
+    if (!standing || standing.length === 0) {
+      console.log("Kein Spielstand vorhanden, initialisiere mit allen Präpositionen.");
+      resetState();
+    } else {
+      console.log("Spielstand vorhanden, initialisiere Pools basierend auf Standing-Daten:", standing);
+      const learnedIds = standing.filter(s => s.correct === 2).map(s => s.exercise);
+      const repeatIds = standing.filter(s => s.correct === 1).map(s => s.exercise);
+      const nokIds = standing.filter(s => s.correct === 0).map(s => s.exercise);
+
+      const untrainedWords = praeposition.filter(word => 
+        !learnedIds.includes(word.id) && !repeatIds.includes(word.id) && !nokIds.includes(word.id)
+      );
+      const repeatPoolWords = praeposition.filter(word => 
+        repeatIds.includes(word.id) || nokIds.includes(word.id)
+      );
+
+      console.log("Untrained Words:", untrainedWords.length, untrainedWords);
+      console.log("RepeatPool Words:", repeatPoolWords.length, repeatPoolWords);
+      console.log("Learned IDs (correct = 2):", learnedIds.length, learnedIds);
+      console.log("Repeat IDs (correct = 1):", repeatIds.length, repeatIds);
+      console.log("NOK IDs (correct = 0):", nokIds.length, nokIds);
+
+      setUntrained(untrainedWords);
+      setRepeatPool(repeatPoolWords);
+      const maxAttempts = standing.reduce((max, s) => Math.max(max, s.attempts || 0), 0);
+      setAttempts(maxAttempts);
+      setTrained(learnedIds.length);
+    }
+    setIsDataLoaded(true);
+    applyNextPraeposition();
+  };
+
+  const resetState = () => {
+    setUntrained(praeposition);
+    setRepeatPool([]);
+    setTrained(0);
+    setAttempts(0);
+    setStandingSummary([]);
+    setCurrentPraeposition(null);
+  };
+
+  const saveToServer = async (action, exerciseData = {}) => {
+    if (!session) return;
+    const { exercise, standingId, correct, attempts } = exerciseData;
+    const validatedCorrect = Number.isInteger(correct) && correct >= 0 && correct <= 2 ? correct : 0;
+
+    try {
+      let response;
+      const payload = {
+        user: session.user.email,
+        exercise,
+        button: action,
+        kategorie,
+        correct: validatedCorrect,
+        attempts: attempts ?? 0,
+      };
+      console.log(`Saving to server: action=${action}, payload=`, payload);
+
+      if (action === "OK" || action === "NOK") {
+        if (standingId) {
+          response = await fetch("/api/standing", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              standingIN: standingId,
+              ...payload,
+            }),
+          });
+        } else {
+          response = await fetch("/api/standing", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+        }
+      } else if (action === "REV") {
+        response = await fetch("/api/standing", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user: session.user.email,
+            kategorie,
+          }),
+        });
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Server responded with ${response.status}: ${errorText}`);
+        throw new Error(`Fehler bei ${action} Aktion: ${errorText}`);
+      }
+      const data = await response.json();
+      console.log("Server response:", data);
+      if (action === "REV") {
+        setStandingSummary([]);
+      } else if (action === "OK" || action === "NOK") {
+        await loadStanding();
+      }
+      return data;
+    } catch (error) {
+      console.error(`Fehler beim Senden an Server (${action}):`, error);
+      throw error;
+    }
+  };
+
+  const applyNextPraeposition = async () => {
+    if (isApplyingFilters || (!Array.isArray(untrained) || !Array.isArray(repeatPool))) {
+      console.error("Filter wird bereits angewendet oder ungültige Pools:", { untrained, repeatPool });
+      return;
+    }
+    setIsApplyingFilters(true);
+    try {
+      const randomCount = Math.floor(Math.random() * 8) + 3;
+      const pool = (attempts > 0 && randomCount === 10 && repeatPool.length > 0) ? repeatPool : untrained;
+
+      if (pool.length > 0) {
+        const randomIndex = Math.floor(Math.random() * pool.length);
+        const randomPraeposition = { ...pool[randomIndex] };
+        randomPraeposition.Datum = new Date(randomPraeposition.Datum).toLocaleDateString("de-DE");
+        setCurrentPraeposition(randomPraeposition);
+      } else {
+        setCurrentPraeposition(null);
+      }
+    } finally {
+      setIsApplyingFilters(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isDataLoaded && !isApplyingFilters) {
+      const timer = setTimeout(() => applyNextPraeposition(), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [untrained, repeatPool, attempts, isDataLoaded]);
+
+  const handleOK = async () => {
+    if (!currentPraeposition || isApplyingFilters) return;
+    setIsApplyingFilters(true);
+    try {
+      const exercise = currentPraeposition.id;
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+
+      const standingResponse = await fetch(
+        `/api/standing?user=${encodeURIComponent(session.user.email)}&exercise=${encodeURIComponent(exercise)}&kategorie=${kategorie}`
+      );
+      const standing = await standingResponse.json();
+
+      const correct = standing && Object.keys(standing).length > 0 ? Math.min((standing.correct || 0) + 1, 2) : 1;
+
+      await saveToServer("OK", {
+        exercise,
+        standingId: standing?.id,
+        correct,
+        attempts: newAttempts,
+      });
+
+      setUntrained(prev => prev.filter(word => word.id !== exercise));
+      setRepeatPool(prev => (correct < 2 ? [...prev, currentPraeposition] : prev));
+
+      if (correct === 2) setTrained(prev => prev + 1);
+
+      const newEntry = {
+        Satz: currentPraeposition.Satz,
+        Loesung: currentPraeposition.Loesung,
+        Datum: currentPraeposition.Datum,
+      };
+
+      setStandingSummary(prev => {
+        if (!prev.some(entry => entry.Satz === newEntry.Satz)) {
+          return [...prev, newEntry];
+        }
+        return prev;
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await applyNextPraeposition();
+    } finally {
+      setIsApplyingFilters(false);
+    }
+  };
+
+  const handleNOK = async () => {
+    if (!currentPraeposition || isApplyingFilters) return;
+    setIsApplyingFilters(true);
+    try {
+      const exercise = currentPraeposition.id;
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+
+      const standingResponse = await fetch(
+        `/api/standing?user=${encodeURIComponent(session.user.email)}&exercise=${encodeURIComponent(exercise)}&kategorie=${kategorie}`
+      );
+      const standing = await standingResponse.json();
+
+      await saveToServer("NOK", {
+        exercise,
+        standingId: standing?.id,
+        correct: 0,
+        attempts: newAttempts,
+      });
+
+      setUntrained(prev => [...prev, currentPraeposition]);
+      setRepeatPool(prev => prev.filter(word => word.id !== exercise));
+
+      const newEntry = {
+        Satz: currentPraeposition.Satz,
+        Loesung: currentPraeposition.Loesung,
+        Datum: currentPraeposition.Datum,
+      };
+
+      setStandingSummary(prev => {
+        if (!prev.some(entry => entry.Satz === newEntry.Satz)) {
+          return [...prev, newEntry];
+        }
+        return prev;
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await applyNextPraeposition();
+    } finally {
+      setIsApplyingFilters(false);
+    }
+  };
+
+  const handleREV = async () => {
+    if (!session || isApplyingFilters) return;
+
+    setIsApplyingFilters(true);
+    try {
+      console.log("Starting handleREV - deleting standings and resetting state...");
+      const response = await saveToServer("REV");
+      console.log("Server response after DELETE:", response);
+      console.log("Alle Standing-Einträge für den Benutzer gelöscht und Score zurückgesetzt.");
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      resetState();
+      setIsDataLoaded(false);
+
+      await loadStanding();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await applyNextPraeposition();
+    } catch (error) {
+      console.error("Fehler in handleREV:", error);
+    } finally {
+      setIsApplyingFilters(false);
+    }
+  };
+
+  if (!session) return <div>Lade...</div>;
+  if (!isDataLoaded) {
+    if (loadingError) {
+      return <LoadingScreen message={`Fehler beim Laden: ${loadingError}`} isError={true} />;
+    }
+    return <LoadingScreen message="Lade Spielstand..." />;
+>>>>>>> Stashed changes
   }
 
   const refreshPage = () => {
