@@ -1,13 +1,13 @@
 import prisma from './prisma';
 
 // READ
-export const getStanding = async (user, exercise) => {
+export const getStanding = async (user, exercise, kategorie) => {
   try {
     const standingExists = await prisma.Standing.findFirst({
       where: {
         user,
         exercise,
-        kategorie: "deutsch",
+        kategorie, // Dynamische Kategorie
       },
     });
     return standingExists;
@@ -22,7 +22,6 @@ export const getStandingAll = async (user) => {
     const standing = await prisma.Standing.findMany({
       where: {
         user,
-        kategorie: "deutsch",
       },
     });
     return standing;
@@ -42,7 +41,7 @@ export const getStandingSums = async (user, kategorie) => {
     });
 
     return {
-      summary, // Nur summary zurückgeben
+      summary,
     };
   } catch (error) {
     console.error("Fehler beim Abrufen der Standing-Summen:", error);
@@ -51,10 +50,9 @@ export const getStandingSums = async (user, kategorie) => {
 };
 
 // CREATE
-export const createStandingOK = async (user, exercise, correct, attempts) => {
+export const createStandingOK = async (user, exercise, correct, attempts, kategorie) => {
   try {
-    // Sicherstellen, dass correct ein gültiger Int-Wert ist (0, 1, oder 2)
-    const validatedCorrect = correct ?? 1; // Standardwert für den ersten OK-Klick ist 1
+    const validatedCorrect = correct ?? 1;
     if (!Number.isInteger(validatedCorrect) || validatedCorrect < 0 || validatedCorrect > 2) {
       console.error("Ungültiger Wert für correct in createStandingOK:", validatedCorrect);
       throw new Error("Ungültiger Wert für correct: Muss eine ganze Zahl zwischen 0 und 2 sein.");
@@ -64,12 +62,12 @@ export const createStandingOK = async (user, exercise, correct, attempts) => {
       data: {
         user,
         exercise,
-        kategorie: "deutsch",
-        correct: validatedCorrect, // Verwende den validierten Wert (für ersten OK: 1)
-        attempts: attempts ?? 1, // Standardwert für attempts ist 1 für den ersten Klick
+        kategorie, // Dynamische Kategorie
+        correct: validatedCorrect,
+        attempts: attempts ?? 1,
       },
     });
-    console.log("Created Standing OK with correct:", validatedCorrect); // Debugging-Log
+    console.log("Created Standing OK with correct:", validatedCorrect);
     return standing;
   } catch (error) {
     console.error("Fehler beim Erstellen eines OK-Standings:", error);
@@ -77,10 +75,9 @@ export const createStandingOK = async (user, exercise, correct, attempts) => {
   }
 };
 
-export const createStandingNOK = async (user, exercise, correct, attempts) => {
+export const createStandingNOK = async (user, exercise, correct, attempts, kategorie) => {
   try {
-    // Sicherstellen, dass correct ein gültiger Int-Wert ist (0, 1, oder 2)
-    const validatedCorrect = correct ?? 0; // Standardwert für NOK ist 0
+    const validatedCorrect = correct ?? 0;
     if (!Number.isInteger(validatedCorrect) || validatedCorrect < 0 || validatedCorrect > 2) {
       console.error("Ungültiger Wert für correct in createStandingNOK:", validatedCorrect);
       throw new Error("Ungültiger Wert für correct: Muss eine ganze Zahl zwischen 0 und 2 sein.");
@@ -90,12 +87,12 @@ export const createStandingNOK = async (user, exercise, correct, attempts) => {
       data: {
         user,
         exercise,
-        kategorie: "deutsch",
-        correct: validatedCorrect, // Verwende den validierten Wert (für NOK: 0)
-        attempts: attempts ?? 1, // Standardwert für attempts ist 1 für den ersten Klick
+        kategorie, // Dynamische Kategorie
+        correct: validatedCorrect,
+        attempts: attempts ?? 1,
       },
     });
-    console.log("Created Standing NOK with correct:", validatedCorrect); // Debugging-Log
+    console.log("Created Standing NOK with correct:", validatedCorrect);
     return standing;
   } catch (error) {
     console.error("Fehler beim Erstellen eines NOK-Standings:", error);
@@ -106,7 +103,6 @@ export const createStandingNOK = async (user, exercise, correct, attempts) => {
 // UPDATE
 export const updateStandingOK = async (standingIN, correct, attempts) => {
   try {
-    // Sicherstellen, dass correct ein gültiger Int-Wert ist (0, 1, oder 2)
     const existingStanding = await prisma.Standing.findUnique({
       where: { id: standingIN },
     });
@@ -114,8 +110,8 @@ export const updateStandingOK = async (standingIN, correct, attempts) => {
       throw new Error("Standing-Eintrag nicht gefunden.");
     }
 
-    let validatedCorrect = correct ?? (existingStanding.correct + 1); // Erhöhe den aktuellen Wert um 1
-    if (validatedCorrect > 2) validatedCorrect = 2; // Begrenze auf 2 (gelernt)
+    let validatedCorrect = correct ?? (existingStanding.correct + 1);
+    if (validatedCorrect > 2) validatedCorrect = 2;
     if (!Number.isInteger(validatedCorrect) || validatedCorrect < 0 || validatedCorrect > 2) {
       console.error("Ungültiger Wert für correct in updateStandingOK:", validatedCorrect);
       throw new Error("Ungültiger Wert für correct: Muss eine ganze Zahl zwischen 0 und 2 sein.");
@@ -126,11 +122,11 @@ export const updateStandingOK = async (standingIN, correct, attempts) => {
         id: standingIN,
       },
       data: {
-        correct: validatedCorrect, // Verwende den validierten und aktualisierten Wert
-        attempts: attempts ?? (existingStanding.attempts + 1), // Erhöhe attempts um 1, falls nicht angegeben
+        correct: validatedCorrect,
+        attempts: attempts ?? (existingStanding.attempts + 1),
       },
     });
-    console.log("Updated Standing OK with correct:", validatedCorrect); // Debugging-Log
+    console.log("Updated Standing OK with correct:", validatedCorrect);
     return standing;
   } catch (error) {
     console.error("Fehler beim Aktualisieren eines OK-Standings:", error);
@@ -140,8 +136,7 @@ export const updateStandingOK = async (standingIN, correct, attempts) => {
 
 export const updateStandingNOK = async (standingIN, correct, attempts) => {
   try {
-    // Sicherstellen, dass correct ein gültiger Int-Wert ist (0, 1, oder 2)
-    const validatedCorrect = correct ?? 0; // Standardwert für NOK ist 0
+    const validatedCorrect = correct ?? 0;
     if (!Number.isInteger(validatedCorrect) || validatedCorrect < 0 || validatedCorrect > 2) {
       console.error("Ungültiger Wert für correct in updateStandingNOK:", validatedCorrect);
       throw new Error("Ungültiger Wert für correct: Muss eine ganze Zahl zwischen 0 und 2 sein.");
@@ -152,11 +147,11 @@ export const updateStandingNOK = async (standingIN, correct, attempts) => {
         id: standingIN,
       },
       data: {
-        correct: validatedCorrect, // Verwende den validierten Wert (für NOK: 0)
-        attempts: attempts ?? (await prisma.Standing.findUnique({ where: { id: standingIN } })).attempts + 1, // Erhöhe attempts um 1
+        correct: validatedCorrect,
+        attempts: attempts ?? (await prisma.Standing.findUnique({ where: { id: standingIN } })).attempts + 1,
       },
     });
-    console.log("Updated Standing NOK with correct:", validatedCorrect); // Debugging-Log
+    console.log("Updated Standing NOK with correct:", validatedCorrect);
     return standing;
   } catch (error) {
     console.error("Fehler beim Aktualisieren eines NOK-Standings:", error);

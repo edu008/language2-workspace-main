@@ -3,31 +3,33 @@
 const withMT = require("@material-tailwind/react/utils/withMT");
 
 module.exports = withMT({
-  content: [
-    "./components/**/*.{js,jsx,ts,tsx}", // Unverändert
-    "./pages/**/*.{js,jsx,ts,tsx}",      // Unverändert
-    "./styles/**/*.css",                 // Geändert von ./styles/**/*.{css} zu ./styles/**/*.css
-  ],
   darkMode: ["class"],
+  content: [
+    "./pages/**/*.{js,jsx,ts,tsx}",
+    "./components/**/*.{js,jsx,ts,tsx}",
+    "./app/**/*.{js,jsx,ts,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "./styles/**/*.css",
+  ],
   safelist: [
-    'grid-cols-1',
-    'grid-cols-2',
-    'grid-cols-3',
-    'grid-cols-4',
-    'sm:grid-cols-1',
-    'sm:grid-cols-2',
-    'lg:grid-cols-3',
-  ], // Zwangsgenerierung dieser Klassen, um sicherzustellen, dass sie immer enthalten sind
+    "grid-cols-1",
+    "grid-cols-2",
+    "grid-cols-3",
+    "grid-cols-4",
+    "sm:grid-cols-1",
+    "sm:grid-cols-2",
+    "lg:grid-cols-3",
+  ],
   theme: {
     container: {
       center: true,
       padding: "2rem",
       screens: {
-        sm: "640px",  // Kleinere Bildschirme: 2 Spalten
+        sm: "640px",
         md: "768px",
-        lg: "1024px", // Größere Bildschirme: 3 Spalten
+        lg: "1024px",
         xl: "1280px",
-        "2xl": "1536px",
+        "2xl": "1400px",
       },
     },
     extend: {
@@ -39,33 +41,15 @@ module.exports = withMT({
         "200": "200",
       },
       fontSize: {
-        "xl": "1.25rem",
-        "sm": "0.875rem",
+        xl: "1.25rem",
+        sm: "0.875rem",
       },
       padding: {
         "4": "1rem",
         "6": "1.5rem",
         "8": "2rem",
       },
-      spacing: {
-        "3": "0.75rem",
-        "4": "1rem",
-      },
-      borderColor: {
-        "200": "#e5e7eb",
-      },
-      backgroundOpacity: {
-        "80": "0.8",
-      },
       colors: {
-        rose: {
-          100: "#ffe4e6",
-        },
-        red: {
-          600: "#dc2626",
-        },
-        black: "#000000",
-        destructive: "#ff0000",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -99,9 +83,26 @@ module.exports = withMT({
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        blue: { // Neue benutzerdefinierte blaue Farbe hinzufügen
-          500: '#1E90FF', // Helles Blau (königliches Blau)
-          600: '#1A7FFF', // Dunkleres Blau für Hover
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
+        deutsch: {
+          blue: "#007AFF",
+          red: "#FF3B30",
+          background: "#FFFFFF",
+          gray: "#F2F2F7",
+          text: "#1D1D1F",
+        },
+        blue: {
+          500: "#1E90FF",
+          600: "#1A7FFF",
         },
       },
       borderRadius: {
@@ -118,6 +119,14 @@ module.exports = withMT({
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        "button-pulse": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.03)" },
+        },
         "card-hover": {
           "0%": { transform: "translateY(0)" },
           "100%": { transform: "translateY(-8px)" },
@@ -126,7 +135,13 @@ module.exports = withMT({
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.6s ease-out",
+        "button-pulse": "button-pulse 2s infinite",
         "card-hover": "card-hover 0.3s ease-out forwards",
+      },
+      fontFamily: {
+        sans: ["SF Pro Display", "system-ui", "sans-serif"],
+        serif: ["SF Pro Text", "Georgia", "serif"],
       },
     },
   },
@@ -134,13 +149,13 @@ module.exports = withMT({
     function ({ addUtilities }) {
       addUtilities({
         ".header-button": {
-          "padding": "0.75rem 1.5rem", // py-3 px-6
-          "font-size": "1.25rem", // text-xl
-          "font-weight": "600", // font-semibold
+          padding: "0.75rem 1.5rem",
+          "font-size": "1.25rem",
+          "font-weight": "600",
         },
       });
     },
     require("@tailwindcss/aspect-ratio"),
-    require("tailwindcss-animate"), // Für Animationen wie animate-card-hover
+    require("tailwindcss-animate"),
   ],
 });

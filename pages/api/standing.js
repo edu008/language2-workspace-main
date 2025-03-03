@@ -12,7 +12,6 @@ import {
 export default async function handler(req, res) {
   const { method, query, body } = req;
 
-  // Setze Cache-Header, um Caching zu verhindern
   res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
@@ -20,29 +19,34 @@ export default async function handler(req, res) {
   try {
     switch (method) {
       case "GET":
-        if (query.exercise) {
-          const standing = await getStanding(query.user, query.exercise);
+        if (query.exercise && query.kategorie) {
+          const standing = await getStanding(query.user, query.exercise, query.kategorie);
           res.status(200).json(standing || {});
-        } else {
+        } else if (query.kategorie) {
           const sums = await getStandingSums(query.user, query.kategorie);
-          res.status(200).json(sums || { attemptsSum: 0, correctSum: 0, finished: 0, summary: [] });
+          res.status(200).json(sums || { summary: [] });
+        } else {
+          res.status(400).json({ error: "Kategorie ist erforderlich" });
         }
         break;
       case "POST":
+        if (!body.kategorie) {
+          return res.status(400).json({ error: "Kategorie ist erforderlich" });
+        }
         if (body.button === "OK") {
-          const standing = await getStanding(body.user, body.exercise);
+          const standing = await getStanding(body.user, body.exercise, body.kategorie);
           if (standing) {
             await updateStandingOK(standing.id, body.correct, body.attempts);
           } else {
-            await createStandingOK(body.user, body.exercise, body.correct ?? 1, body.attempts ?? 1);
+            await createStandingOK(body.user, body.exercise, body.correct ?? 1, body.attempts ?? 1, body.kategorie);
           }
           res.status(200).json({ message: "OK Standing updated/created" });
         } else if (body.button === "NOK") {
-          const standing = await getStanding(body.user, body.exercise);
+          const standing = await getStanding(body.user, body.exercise, body.kategorie);
           if (standing) {
             await updateStandingNOK(standing.id, body.correct ?? 0, body.attempts);
           } else {
-            await createStandingNOK(body.user, body.exercise, body.correct ?? 0, body.attempts ?? 1);
+            await createStandingNOK(body.user, body.exercise, body.correct ?? 0, body.attempts ?? 1, body.kategorie);
           }
           res.status(200).json({ message: "NOK Standing updated/created" });
         }
@@ -57,6 +61,9 @@ export default async function handler(req, res) {
         }
         break;
       case "DELETE":
+        if (!body.kategorie) {
+          return res.status(400).json({ error: "Kategorie ist erforderlich" });
+        }
         await deleteStandings(body.user, body.kategorie);
         res.status(200).json({ message: "Standings deleted" });
         break;

@@ -15,6 +15,8 @@ export default function Header({ session }) {
     '/deutsch': 'Wortbedeutungen',
     '/': 'Deutsch Lernen',
     '/Worterfassung': 'Worterfassung',
+    '/praeposition': 'Präpositionen',
+
   };
 
   const pageTitle = pageTitles[router.pathname] || 'Not Found';
