@@ -4,9 +4,11 @@ const withMT = require("@material-tailwind/react/utils/withMT");
 
 module.exports = withMT({
   content: [
-    "./components/**/*.{js,jsx,ts,tsx}", // Unverändert
-    "./pages/**/*.{js,jsx,ts,tsx}",      // Unverändert
-    "./styles/**/*.css",                 // Geändert von ./styles/**/*.{css} zu ./styles/**/*.css
+    "./components/**/*.{js,jsx,ts,tsx}",
+    "./pages/**/*.{js,jsx,ts,tsx}",
+    "./styles/**/*.css",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
   darkMode: ["class"],
   safelist: [
@@ -17,15 +19,15 @@ module.exports = withMT({
     'sm:grid-cols-1',
     'sm:grid-cols-2',
     'lg:grid-cols-3',
-  ], // Zwangsgenerierung dieser Klassen, um sicherzustellen, dass sie immer enthalten sind
+  ],
   theme: {
     container: {
       center: true,
       padding: "2rem",
       screens: {
-        sm: "640px",  // Kleinere Bildschirme: 2 Spalten
+        sm: "640px",
         md: "768px",
-        lg: "1024px", // Größere Bildschirme: 3 Spalten
+        lg: "1024px",
         xl: "1280px",
         "2xl": "1536px",
       },
@@ -99,9 +101,19 @@ module.exports = withMT({
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        blue: { // Neue benutzerdefinierte blaue Farbe hinzufügen
-          500: '#1E90FF', // Helles Blau (königliches Blau)
-          600: '#1A7FFF', // Dunkleres Blau für Hover
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
+        blue: {
+          500: '#1E90FF',
+          600: '#1A7FFF',
         },
       },
       borderRadius: {
@@ -118,6 +130,18 @@ module.exports = withMT({
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "flip-in": {
+          "0%": { transform: "rotateY(180deg)", opacity: "0" },
+          "100%": { transform: "rotateY(0)", opacity: "1" },
+        },
+        "flip-out": {
+          "0%": { transform: "rotateY(0)", opacity: "1" },
+          "100%": { transform: "rotateY(180deg)", opacity: "0" },
+        },
         "card-hover": {
           "0%": { transform: "translateY(0)" },
           "100%": { transform: "translateY(-8px)" },
@@ -126,6 +150,9 @@ module.exports = withMT({
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.4s ease-out",
+        "flip-in": "flip-in 0.4s ease-out",
+        "flip-out": "flip-out 0.4s ease-out",
         "card-hover": "card-hover 0.3s ease-out forwards",
       },
     },
@@ -134,13 +161,13 @@ module.exports = withMT({
     function ({ addUtilities }) {
       addUtilities({
         ".header-button": {
-          "padding": "0.75rem 1.5rem", // py-3 px-6
-          "font-size": "1.25rem", // text-xl
-          "font-weight": "600", // font-semibold
+          "padding": "0.75rem 1.5rem",
+          "font-size": "1.25rem",
+          "font-weight": "600",
         },
       });
     },
     require("@tailwindcss/aspect-ratio"),
-    require("tailwindcss-animate"), // Für Animationen wie animate-card-hover
+    require("tailwindcss-animate"),
   ],
 });

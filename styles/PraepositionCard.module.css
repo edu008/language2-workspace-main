@@ -1,0 +1,116 @@
+.cardContainer {
+  min-width: 800px; /* Die Karte wird nicht schmaler als 800px, wie im aktuellen Design */
+  min-height: 400px; /* Die Karte wird nicht niedriger als 400px */
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background-color: #f0f4ff; /* Sanftes Blau für Vorder- und Rückseite */
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db; /* Leichter grauer Rand */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: box-shadow 300ms, transform 300ms;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.cardContainer:hover {
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+  transform: scale(1.03);
+}
+
+.cardContainer:active {
+  transform: scale(1);
+}
+
+/* Hintergrundfarbe für die Rückseite (hellblau wie im Screenshot) */
+.cardContainer.translation {
+  background-color: #f0f4ff; /* Hellblau für die Rückseite */
+}
+
+/* Top-Right-Info (Klickhinweis) */
+.topRightInfo {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280; /* Grau für den Hinweis */
+}
+
+/* Inhalt der Karte (zentriert, mit Abständen) */
+.innerContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+  height: 100%;
+}
+
+/* Highlight für Lücken im Satz */
+.gapHighlight {
+  background-color: #fef3c7; /* Leichtes Gelb als Highlight */
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  animation: blink 1.5s infinite;
+}
+
+/* Animation für das Blinken der Lücke */
+@keyframes blink {
+  50% { opacity: 0.5; }
+}
+
+/* Fortschrittsinformation (optional, falls du sie auf der Karte anzeigen möchtest) */
+.progressInfo {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #1e3a8a; /* Dunkles Blau für den Text */
+}
+
+/* Stile für die Rückseite */
+.innerContent h3:first-child {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 600; /* Semi-bold */
+  color: #000000; /* Schwarz */
+  margin-bottom: 1rem;
+}
+
+.innerContent h3:not(:first-child) {
+  font-size: 2rem; /* text-4xl */
+  font-weight: 500; /* Medium */
+  color: #1e3a8a; /* Blau */
+  margin-bottom: 1rem;
+}
+
+/* Vollständiger Satz auf der Rückseite */
+.innerContent p {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 500; /* Medium */
+  color: #10b981; /* Grün */
+  margin-bottom: 1rem;
+  white-space: pre-wrap; /* Umbruch für lange Sätze */
+}
+
+/* Fettgedruckte Präpositionen im Satz */
+.innerContent strong {
+  font-weight: bold; /* Fett gedruckt */
+  color: #10b981; /* Grün, um konsistent mit dem Satz zu sein */
+}
+
+/* Datum auf der Rückseite */
+.date {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  font-size: 0.75rem; /* text-xs */
+  color: #6b7280; /* Grau */
+}

@@ -109,7 +109,7 @@ model standings {
 }
 
 
-model Standing {
+model standing {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   user      String
   exercise  String   @db.ObjectId // Die Wort-ID
