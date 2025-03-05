@@ -1,137 +1,132 @@
-import { useSession, signIn, signOut } from "next-auth/react";
-import Link from "next/link";
-import Image from "next/image";
+import { useSession, signIn } from "next-auth/react";
+import React from "react";
 import Head from "next/head";
-import React from "react"; // Für React-Komponenten
-import {
-  Book,
-  BookOpen,
-  Quote,
-  MessageSquare,
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { 
+  BookOpen, 
+  MessageSquare, 
+  GraduationCap, 
+  CheckCircle,
   ArrowDown,
-} from "lucide-react"; // Importiere nur die Icons, die für die Karten benötigt werden
-import { useRouter } from "next/router"; // Für Navigation im Header
-import Header from "../components/deutsch/Header"; // Importiere die Header-Komponente aus components/deutsch/Header.js
+  Quote 
+} from "lucide-react";
+import Header from "../components/deutsch/Header";
 
-// Einfache Utility-Funktion für Klassen
-const cn = (...classes) => classes.filter(Boolean).join(" ");
-
-// Einfache Card-Komponente direkt hier definieren, basierend auf .exercise-card
-const Card = ({ children, className, onClick }) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "exercise-card group text-left bg-card border border-border rounded-xl shadow-md p-6", // Erhöhtes Padding auf p-6 für größere Karten
-      className
-    )}
-  >
-    {children}
-  </button>
-);
-
-// Dialog-Komponente direkt hier definieren
-const Dialog = ({ children, open, onOpenChange }) => (
-  <div className={cn("fixed inset-0 z-50", open ? "block" : "hidden")}>
-    <div
-      className="fixed inset-0 bg-black/50"
-      onClick={() => onOpenChange(false)}
-    />
-    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-popover p-6 rounded-lg shadow-lg w-[90%] max-w-md">
-      {children}
+// Feature Card Component
+const FeatureCard = ({ icon, title, description }) => {
+  return (
+    <div className="flex flex-col p-6 rounded-xl border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all">
+      <div className="mb-4">{icon}</div>
+      <h3 className="text-xl font-semibold text-gray-800 mb-2">{title}</h3>
+      <p className="text-gray-600">{description}</p>
     </div>
-  </div>
-);
-const DialogTrigger = ({ children, onClick }) => (
-  <button onClick={onClick} className="inline-flex items-center">
-    {children}
-  </button>
-);
-const DialogContent = ({ children }) => <>{children}</>;
-const DialogHeader = ({ children }) => <div className="mb-4">{children}</div>;
-const DialogTitle = ({ children }) => (
-  <h3 className="text-lg font-bold mb-2 text-foreground">{children}</h3>
-);
-const DialogDescription = ({ children }) => (
-  <p className="text-sm text-muted-foreground mb-4">{children}</p>
-);
-const DialogFooter = ({ children }) => <div className="mt-4">{children}</div>;
+  );
+};
 
-// Checkbox-Komponente direkt hier definieren
-const Checkbox = ({ checked, onCheckedChange }) => (
-  <input
-    type="checkbox"
-    checked={checked}
-    onChange={(e) => onCheckedChange(e.target.checked)}
-    className="w-4 h-4 mr-2"
-  />
-);
+// Login Button Component
+const LoginButton = ({ variant = "main", className = "" }) => {
+  return (
+    <button
+      onClick={() => signIn()}
+      className={`${
+        variant === "main"
+          ? "bg-blue-600 hover:bg-blue-700 text-white"
+          : "bg-white hover:bg-gray-100 text-blue-600 border border-blue-600"
+      } font-medium rounded-lg px-6 py-3 text-lg transition-colors ${className}`}
+    >
+      Jetzt anmelden
+    </button>
+  );
+};
 
-// Textarea-Komponente direkt hier definieren
-const Textarea = ({ value, onChange, placeholder }) => (
-  <textarea
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    placeholder={placeholder}
-    className="w-full p-2 border rounded mt-2 bg-background text-foreground border-border"
-  />
-);
+export default function Home() {
+  const { data: session, status } = useSession(); // Status hinzugefügt
+  const router = useRouter();
 
-export default function Component() {
-  const { data: session } = useSession();
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [selectedExercises, setSelectedExercises] = React.useState([]); // Typen entfernt, reines JavaScript
-  const router = useRouter(); // Für Navigation im Header
+  // Features data
+  const features = [
+    {
+      icon: <BookOpen className="h-8 w-8 text-blue-600" />,
+      title: "Umfangreiche Übungen",
+      description: "Über 500 interaktive Übungen für alle Sprachniveaus von A1 bis C2."
+    },
+    {
+      icon: <MessageSquare className="h-8 w-8 text-blue-600" />,
+      title: "Konversations- praxis",
+      description: "Verbessere deine Sprechfähigkeiten mit KI-gestützten Dialogübungen."
+    },
+    {
+      icon: <GraduationCap className="h-8 w-8 text-blue-600" />,
+      title: "Zertifikats- vorbereitung",
+      description: "Gezielte Vorbereitung auf offizielle Deutschprüfungen wie Goethe oder TestDaF."
+    },
+    {
+      icon: <CheckCircle className="h-8 w-8 text-blue-600" />,
+      title: "Persönlicher Fortschritt",
+      description: "Verfolge deinen Lernfortschritt und erhalte maßgeschneiderte Empfehlungen."
+    }
+  ];
 
+  // Exercises data (for logged-in users)
   const exercises = [
     {
       title: "Wortbedeutungen",
       description: "Lernen Sie die Bedeutung deutscher Wörter",
-      icon: <Book className="h-8 w-8 text-primary" />, // Größere Icons (h-8 w-8 statt h-6 w-6)
+      icon: <BookOpen className="h-8 w-8 text-primary" />,
       chip: "Vokabeln",
       link: "/deutsch",
     },
     {
       title: "Präpositionen",
       description: "Üben Sie den korrekten Gebrauch von Präpositionen",
-      icon: <BookOpen className="h-8 w-8 text-primary" />, // Größere Icons
+      icon: <BookOpen className="h-8 w-8 text-primary" />,
       chip: "Grammatik",
       link: "/praeposition",
     },
     {
       title: "Sprichwörter",
       description: "Entdecken Sie deutsche Sprichwörter",
-      icon: <Quote className="h-8 w-8 text-primary" />, // Größere Icons
+      icon: <Quote className="h-8 w-8 text-primary" />,
       chip: "Kultur",
       link: "/sprichwort",
     },
     {
       title: "Redewendungen",
       description: "Lernen Sie gebräuchliche Redewendungen",
-      icon: <MessageSquare className="h-8 w-8 text-primary" />, // Größere Icons
+      icon: <MessageSquare className="h-8 w-8 text-primary" />,
       chip: "Idiome",
       link: "/redewendung",
     },
     {
       title: "Präpositionen & Verben",
       description: "Üben Sie Präpositionen mit den passenden Verben",
-      icon: <Book className="h-8 w-8 text-primary" />, // Größere Icons
+      icon: <BookOpen className="h-8 w-8 text-primary" />,
       chip: "Grammatik",
       link: "/praepverben",
     },
   ];
 
+  // Zeige Ladeindikator während die Session geladen wird
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   if (session && session.user) {
+    // Logged-in view (keep the existing exercise cards)
     return (
       <div className="min-h-screen bg-background">
         <Head>
           <title>Deutsch lernen</title>
         </Head>
 
-        {/* Header aus der Header-Komponente aus components/deutsch/Header */}
         <Header session={session} />
 
-        {/* Main Content mit margin-top, um den festen Header zu berücksichtigen */}
-        <main className="container mx-auto px-4 py-8 mt-20"> {/* Füge mt-20 hinzu, um den Inhalt unter dem Header (h-20) zu verschieben */}
+        <main className="container mx-auto px-4 py-8 mt-20">
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Übungen</h2>
             <p className="mt-2 text-muted-foreground">
@@ -139,27 +134,25 @@ export default function Component() {
             </p>
           </div>
 
-          {/* Übungskarten in 3 Spalten (responsiv: 2 Spalten bei kleineren Bildschirmen) */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {exercises.map((exercise, index) => (
-              <Card
+              <button
                 key={index}
-                onClick={() => router.push(exercise.link)} // Navigation zu der Übungsseite
-                className="group text-left"
+                onClick={() => router.push(exercise.link)}
+                className="exercise-card group text-left bg-card border border-border rounded-xl shadow-md p-6"
               >
                 <div className="exercise-chip flex items-center justify-center">
                   {exercise.chip}
                 </div>
                 <div className="mb-4 flex justify-center">{exercise.icon}</div>
-                <h3 className="exercise-title text-center">{exercise.title}</h3> {/* Zentriert den Titel */}
+                <h3 className="exercise-title text-center">{exercise.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground text-center">
                   {exercise.description}
-                </p> {/* Zentriert die Beschreibung */}
-              </Card>
+                </p>
+              </button>
             ))}
           </div>
 
-          {/* Worterfassung-Button zentriert unten */}
           <div className="mt-12 text-center">
             <Link
               href="/Worterfassung"
@@ -174,29 +167,54 @@ export default function Component() {
     );
   }
 
+  // Not logged in view (new landing page design)
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-white animate-fade-in">
       <Head>
         <title>Deutsch lernen</title>
       </Head>
 
-      {/* Header für nicht angemeldete Nutzer */}
       <Header session={session} />
-
-      {/* Main Content mit margin-top für nicht angemeldete Nutzer */}
-      <main className="container mx-auto px-4 py-8 mt-20"> {/* Füge mt-20 hinzu, um den Inhalt unter dem Header zu verschieben */}
-        <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            Melde dich an, damit Du Übungen durchführen oder neue erfassen kannst.
-          </h2>
-          <button
-            className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2"
-            onClick={() => signIn()}
-          >
-            Anmelden
-          </button>
+      
+      <main className="flex-grow flex flex-col items-center px-4 py-12 mt-20">
+        <div className="max-w-4xl w-full mx-auto text-center">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 mb-6">
+            Deutsch lernen leicht gemacht
+          </h1>
+          
+          <p className="text-xl text-gray-700 mb-10 max-w-3xl mx-auto">
+            Verbessere deine Deutschkenntnisse mit unserer interaktiven Lernplattform. 
+            Für Anfänger und Fortgeschrittene.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12 text-left">
+            {features.map((feature, index) => (
+              <FeatureCard 
+                key={index}
+                icon={feature.icon}
+                title={feature.title} 
+                description={feature.description}
+              />
+            ))}
+          </div>
+          
+          <div className="bg-gray-50 p-8 rounded-xl shadow-sm border border-gray-100">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+              Bereit zum Lernen?
+            </h2>
+            <p className="text-lg text-gray-700 mb-6">
+              Melde dich an, um sofort mit dem Lernen zu beginnen und auf alle Übungen zuzugreifen.
+            </p>
+            <LoginButton variant="main" className="mx-auto" />
+          </div>
         </div>
       </main>
+      
+      <footer className="py-6 border-t border-gray-100 text-center text-sm text-gray-500">
+        <div className="container mx-auto">
+          <p>© {new Date().getFullYear()} Deutsch Lernen. Alle Rechte vorbehalten.</p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -1,14 +1,30 @@
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { signIn, signOut } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { useState } from 'react';
 
 export default function Header({ session }) {
   const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleUebungsauswahlClick = () => {
-    router.push('/');
+    // Set navigating state to true to prevent UI flashing
+    setIsNavigating(true);
+    
+    // Special case for enterdeutsch page - redirect to Worterfassung
+    if (router.pathname === '/enterdeutsch') {
+      router.push('/Worterfassung').then(() => {
+        // Reset navigating state after navigation completes
+        setIsNavigating(false);
+      });
+    } else {
+      router.push('/').then(() => {
+        // Reset navigating state after navigation completes
+        setIsNavigating(false);
+      });
+    }
   };
 
   const pageTitles = {
@@ -17,10 +33,15 @@ export default function Header({ session }) {
     '/Worterfassung': 'Worterfassung',
     '/praeposition': 'Präpositionen',
     '/sprichwort': 'Sprichwörter',
-
+    '/redewendung': 'Redewendung',
+    '/praepverben': 'Präpositionen & Verben',
+    '/enterdeutsch': 'Bearbeitung Wortbedeutungen',
   };
 
   const pageTitle = pageTitles[router.pathname] || 'Not Found';
+
+  // Disable the button during navigation
+  const buttonDisabled = isNavigating;
 
   return (
     <header className="bg-white/80 backdrop-blur-sm fixed top-0 w-full z-200 h-20 border-b border-gray-200 shadow-md flex items-center">
@@ -31,7 +52,8 @@ export default function Header({ session }) {
             {router.pathname !== '/' && ( // Zeige den Zurück-Button nur, wenn nicht auf der exakten Route "/"
               <button
                 onClick={handleUebungsauswahlClick}
-                className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                disabled={buttonDisabled}
+                className={`p-2 rounded-md ${buttonDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'} transition-colors`}
               >
                 <FontAwesomeIcon icon={faArrowLeft} className="text-gray-600" style={{ height: '24px', width: '24px' }} />
               </button>
@@ -59,7 +81,11 @@ export default function Header({ session }) {
                 </p>
                 <button
                   className="text-red-600 hover:bg-gray-100 hover:text-black font-semibold text-lg flex items-center px-4 py-2 rounded-md transition-colors"
-                  onClick={() => signOut({ callbackUrl: '/' })}
+                  onClick={() => {
+                    setIsNavigating(true);
+                    signOut({ callbackUrl: '/' });
+                  }}
+                  disabled={buttonDisabled}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -85,6 +111,7 @@ export default function Header({ session }) {
               <button
                 className="bg-blue-500 text-white hover:bg-blue-600 font-semibold text-lg px-4 py-2 rounded-md transition-colors"
                 onClick={() => signIn()}
+                disabled={buttonDisabled}
               >
                 Anmelden
               </button>

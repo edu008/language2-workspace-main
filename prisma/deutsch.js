@@ -19,13 +19,13 @@ export const createDeutsch = async (Article, Artikel, Definition, Prefix, Root, 
 }
 
 // UPDATE
-export const updateDeutsch = async (Id, Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word) => {
+export const updateDeutsch = async (id, Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word) => {
   try {
-    if (!Id || !Word || typeof Word !== 'string') {
+    if (!id || !Word || typeof Word !== 'string') {
       throw new Error('Invalid input');
     }
     const de = await prisma.deutschs.update({
-      where: { id: Id },
+      where: { id: id },
       data: {
         Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word, DateEntryWord: new Date()
       }

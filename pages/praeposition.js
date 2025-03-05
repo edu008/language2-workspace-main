@@ -14,7 +14,6 @@ import LoadingScreen from "../components/deutsch/LoadingScreen";
 import { Button } from "@material-tailwind/react";
 import { getPraepositionCount, getPraeposition } from "../prisma/praeposition";
 
-
 export async function getServerSideProps(context) {
   const session = await getSession(context);
   if (!session) {
@@ -66,23 +65,28 @@ export default function Praeposition({ praepositionCount, praeposition }) {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [loadingError, setLoadingError] = useState(null);
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
-  const kategorie = "praeposition"; // Sicherstellen, dass die Kategorie korrekt ist
+  const kategorie = "praeposition";
 
   useEffect(() => {
+    console.log("useEffect läuft... Status:", status, "isDataLoaded:", isDataLoaded);
     if (typeof window !== 'undefined' && status === "authenticated" && !isDataLoaded) {
+      console.log("Initialer Ladevorgang wird gestartet...");
       loadStanding();
     }
   }, [status, isDataLoaded]);
 
   const debouncedHandleClick = debounce((callback) => {
     if (!isApplyingFilters) {
-      console.log("Debounced handleREV called (kategorie=praeposition)");
+      console.log("Debounced handleClick called (kategorie=praeposition)");
       callback();
     }
   }, 1000);
 
   const loadStanding = async () => {
-    if (!session || isDataLoaded) return;
+    if (!session || isDataLoaded) {
+      console.log("loadStanding abgebrochen: Session fehlt oder Daten bereits geladen");
+      return;
+    }
     try {
       const response = await fetch(
         `/api/standing?user=${encodeURIComponent(session.user.email)}&kategorie=${kategorie}`,
@@ -94,6 +98,7 @@ export default function Praeposition({ praepositionCount, praeposition }) {
           },
         }
       );
+      console.log("Fetch Response Status:", response.status);
       if (!response.ok) {
         throw new Error(`Failed to load standing: ${response.status} - ${await response.text()}`);
       }
@@ -105,15 +110,14 @@ export default function Praeposition({ praepositionCount, praeposition }) {
         resetState();
         setStandingSummary([]);
         setIsDataLoaded(true);
+        console.log("isDataLoaded auf true gesetzt (keine Daten)");
         return;
       }
 
-      // Filtere explizit nur Einträge mit kategorie="praeposition"
       const praepositionStandings = data.summary.filter(item => item.kategorie === "praeposition");
       console.log("Filtered Standings (kategorie=praeposition):", praepositionStandings);
 
       applyStandingToWords(praepositionStandings);
-      // Filtere standingSummary, um nur Einträge mit vorhandenen Präpositionen und kategorie="praeposition" anzuzeigen
       setStandingSummary(praepositionStandings
         .map(item => {
           const p = praeposition.find(p => p.id === item.exercise);
@@ -128,12 +132,15 @@ export default function Praeposition({ praepositionCount, praeposition }) {
         .filter(item => item !== null)
       );
       setLoadingError(null);
+      setIsDataLoaded(true);
+      console.log("isDataLoaded auf true gesetzt (Daten geladen)");
     } catch (error) {
       console.error("Fehler beim Laden des Standing (kategorie=praeposition):", error);
       setLoadingError(error.message);
       resetState();
       setStandingSummary([]);
       setIsDataLoaded(true);
+      console.log("isDataLoaded auf true gesetzt (Fehlerfall)");
     }
   };
 
@@ -166,11 +173,11 @@ export default function Praeposition({ praepositionCount, praeposition }) {
       setAttempts(maxAttempts);
       setTrained(learnedIds.length);
     }
-    setIsDataLoaded(true);
     applyNextPraeposition();
   };
 
   const resetState = () => {
+    console.log("resetState aufgerufen");
     setUntrained(praeposition);
     setRepeatPool([]);
     setTrained(0);
@@ -183,7 +190,7 @@ export default function Praeposition({ praepositionCount, praeposition }) {
     if (!session) return;
     const { exercise, standingId, correct, attempts } = exerciseData;
     const validatedCorrect = Number.isInteger(correct) && correct >= 0 && correct <= 2 ? correct : 0;
-    const payloadKategorie = "praeposition"; // Explizit "praeposition" setzen, um Fehler zu vermeiden
+    const payloadKategorie = "praeposition";
 
     try {
       let response;
@@ -191,7 +198,7 @@ export default function Praeposition({ praepositionCount, praeposition }) {
         user: session.user.email,
         exercise,
         button: action,
-        kategorie: payloadKategorie, // Sicherstellen, dass kategorie="praeposition" ist
+        kategorie: payloadKategorie,
         correct: validatedCorrect,
         attempts: attempts ?? 0,
       };
@@ -220,7 +227,7 @@ export default function Praeposition({ praepositionCount, praeposition }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user: session.user.email,
-            kategorie: payloadKategorie, // Sicherstellen, dass kategorie="praeposition" ist
+            kategorie: payloadKategorie,
           }),
         });
       }
@@ -269,6 +276,7 @@ export default function Praeposition({ praepositionCount, praeposition }) {
 
   useEffect(() => {
     if (isDataLoaded && !isApplyingFilters) {
+      console.log("Nächste Präposition wird angewendet...");
       const timer = setTimeout(() => applyNextPraeposition(), 200);
       return () => clearTimeout(timer);
     }
@@ -386,27 +394,29 @@ export default function Praeposition({ praepositionCount, praeposition }) {
     }
   };
 
-  // Handhabung des Redirects für den Spielstand
   useEffect(() => {
     if (router.query.redirected === "true" && !isDataLoaded && !isApplyingFilters) {
-      setIsDataLoaded(false); // Sicherstellen, dass loadStanding erneut ausgeführt wird
+      console.log("Redirect erkannt, setze Zustand zurück...");
+      setIsDataLoaded(false);
       loadStanding();
-      setErrorMessage(
-        "Der Fortschritt wurde automatisch zurückgesetzt, da alle Präpositionen erlernt wurden!"
-      );
+      setLoadingError("Der Fortschritt wurde automatisch zurückgesetzt, da alle Präpositionen erlernt wurden!");
       resetState();
       router.replace("/praeposition", undefined, { shallow: true });
     }
   }, [router.query.redirected, isDataLoaded, isApplyingFilters]);
 
-  if (!session) return <div>Lade...</div>;
+  if (!session) {
+    console.log("Rendere Lade-Text, da session fehlt...");
+  }
   if (!isDataLoaded) {
+    console.log("Rendere LoadingScreen... loadingError:", loadingError);
     if (loadingError) {
       return <LoadingScreen message={`Fehler beim Laden: ${loadingError}`} isError={true} />;
     }
-    return <LoadingScreen message="Lade Spielstand..." />;
+    return <LoadingScreen/>;
   }
 
+  console.log("Rendere die Seite... isDataLoaded:", isDataLoaded);
   const progress = Math.round((trained / praepositionCount) * 100) || 0;
 
   return (
@@ -414,72 +424,68 @@ export default function Praeposition({ praepositionCount, praeposition }) {
       <Head>
         <title>Präpositionen</title>
       </Head>
-      {session && (
-        <>
-          <Header session={session} />
-          <main className="flex justify-end items-start w-full p-6 z-0" style={{ marginTop: "96px" }}>
-            <div className="flex gap-4">
-              <Button
-                onClick={handleREV}
-                className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 text-white font-bold text-sm flex items-center gap-2"
-              >
-                <FontAwesomeIcon icon={faTrashRestore} />
-                Alle Daten löschen
-              </Button>
-            </div>
-          </main>
+      <Header session={session} />
+      <main className="flex justify-end items-start w-full p-6 z-0" style={{ marginTop: "96px" }}>
+        <div className="flex gap-4">
+          <Button
+            onClick={handleREV}
+            className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 text-white font-bold text-sm flex items-center gap-2"
+          >
+            <FontAwesomeIcon icon={faTrashRestore} />
+            Alle Daten löschen
+          </Button>
+        </div>
+      </main>
 
-          <div className="max-w-5xl mx-auto py-2 px-4 sm:px-6 lg:px-8" style={{ minHeight: "800px", display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {currentPraeposition ? (
-              <PraepositionCard
-                wordData={{
-                  satz: currentPraeposition.Satz,
-                  loesung: currentPraeposition.Loesung,
-                  quelle: currentPraeposition.Quelle,
-                  datum: currentPraeposition.Datum,
-                }}
-                showTranslation={showTranslation}
-                onFlip={() => setShowTranslation(!showTranslation)}
-              />
-            ) : (
-              <div>Keine Präpositionen verfügbar. Alle wurden gelernt!</div>
-            )}
-            <div className="mt-4" style={{ minHeight: "100px" }}>
-              <ActionButtons
-                onCorrect={() => debouncedHandleClick(handleOK)}
-                onIncorrect={() => debouncedHandleClick(handleNOK)}
-                isLoading={isApplyingFilters}
-              />
-            </div>
-            <div className="mt-4" style={{ minHeight: "50px" }}>
-              <Stats
-                totalCount={praepositionCount}
-                trainedCount={trained}
-                attempts={attempts}
-                progress={progress}
-              />
-            </div>
-            {standingSummary.length > 0 && (
-              <table className="table-auto border-collapse border border-gray-300 mt-4 w-full bg-white">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-300 p-2 text-left">Satz</th>
-                    <th className="border border-gray-300 p-2 text-left">Lösung</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {standingSummary.map((item, index) => (
-                    <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                      <td className="border border-gray-300 p-2">{item.Satz}</td>
-                      <td className="border border-gray-300 p-2">{item.Loesung}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </>
-      )}
+      <div className="max-w-5xl mx-auto py-2 px-4 sm:px-6 lg:px-8" style={{ minHeight: "800px", display: "flex", flexDirection: "column", gap: "1rem" }}>
+        {currentPraeposition ? (
+          <PraepositionCard
+            wordData={{
+              satz: currentPraeposition.Satz,
+              loesung: currentPraeposition.Loesung,
+              quelle: currentPraeposition.Quelle,
+              datum: currentPraeposition.Datum,
+            }}
+            showTranslation={showTranslation}
+            onFlip={() => setShowTranslation(!showTranslation)}
+          />
+        ) : (
+          <div>Keine Präpositionen verfügbar. Alle wurden gelernt!</div>
+        )}
+        <div className="mt-4" style={{ minHeight: "100px" }}>
+          <ActionButtons
+            onCorrect={() => debouncedHandleClick(handleOK)}
+            onIncorrect={() => debouncedHandleClick(handleNOK)}
+            isLoading={isApplyingFilters}
+          />
+        </div>
+        <div className="mt-4" style={{ minHeight: "50px" }}>
+          <Stats
+            totalCount={praepositionCount}
+            trainedCount={trained}
+            attempts={attempts}
+            progress={progress}
+          />
+        </div>
+        {standingSummary.length > 0 && (
+          <table className="table-auto border-collapse border border-gray-300 mt-4 w-full bg-white">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 p-2 text-left">Satz</th>
+                <th className="border border-gray-300 p-2 text-left">Lösung</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standingSummary.map((item, index) => (
+                <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                  <td className="border border-gray-300 p-2">{item.Satz}</td>
+                  <td className="border border-gray-300 p-2">{item.Loesung}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </>
   );
 }

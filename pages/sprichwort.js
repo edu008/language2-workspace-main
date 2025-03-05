@@ -438,7 +438,6 @@ export default function Sprichwort({ sprichwortCount, sprichwort }) {
     }
   }, [router.query.redirected, isDataLoaded, isApplyingFilters]);
 
-  if (!session) return <div>Lade...</div>;
   if (!isDataLoaded) {
     if (loadingError) {
       return <LoadingScreen message={`Fehler beim Laden: ${loadingError}`} isError={true} />;

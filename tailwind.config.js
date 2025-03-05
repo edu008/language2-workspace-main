@@ -1,5 +1,4 @@
 /** @type {import('tailwindcss').Config} */
-
 const withMT = require("@material-tailwind/react/utils/withMT");
 
 module.exports = withMT({
@@ -12,14 +11,15 @@ module.exports = withMT({
   ],
   darkMode: ["class"],
   safelist: [
-    'grid-cols-1',
-    'grid-cols-2',
-    'grid-cols-3',
-    'grid-cols-4',
-    'sm:grid-cols-1',
-    'sm:grid-cols-2',
-    'lg:grid-cols-3',
+    "grid-cols-1",
+    "grid-cols-2",
+    "grid-cols-3",
+    "grid-cols-4",
+    "sm:grid-cols-1",
+    "sm:grid-cols-2",
+    "lg:grid-cols-3",
   ],
+  prefix: "",
   theme: {
     container: {
       center: true,
@@ -29,7 +29,7 @@ module.exports = withMT({
         md: "768px",
         lg: "1024px",
         xl: "1280px",
-        "2xl": "1536px",
+        "2xl": "1400px",
       },
     },
     extend: {
@@ -112,14 +112,52 @@ module.exports = withMT({
           ring: "hsl(var(--sidebar-ring))",
         },
         blue: {
-          500: '#1E90FF',
-          600: '#1A7FFF',
+          500: "#1E90FF",
+          600: "#1A7FFF",
+        },
+        deutsch: {
+          blue: "#007AFF",
+          red: "#FF3B30",
+          background: "#FFFFFF",
+          gray: "#F2F2F7",
+          text: "#1D1D1F",
+        },
+        // Hinzugefügte wg-Farbpalette aus der zweiten Konfiguration
+        wg: {
+          blue: {
+            50: '#f0f7ff',
+            100: '#e0f1ff',
+            200: '#c0e3ff',
+            300: '#8fcdff',
+            400: '#5aacff',
+            500: '#3183ff',
+            600: '#1a65ff',
+            700: '#0f4aec',
+            800: '#0f3cbb',
+            900: '#123494',
+          },
+          neutral: {
+            50: '#f8f9fa',
+            100: '#f1f3f5',
+            200: '#e9ecef',
+            300: '#dee2e6',
+            400: '#ced4da',
+            500: '#adb5bd',
+            600: '#868e96',
+            700: '#495057',
+            800: '#343a40',
+            900: '#212529',
+          },
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      fontFamily: {
+        sans: ["SF Pro Display", "Inter", "system-ui", "sans-serif"],
+        serif: ["SF Pro Text", "Georgia", "serif"],
       },
       keyframes: {
         "accordion-down": {
@@ -146,6 +184,38 @@ module.exports = withMT({
           "0%": { transform: "translateY(0)" },
           "100%": { transform: "translateY(-8px)" },
         },
+        "button-pulse": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.03)" },
+        },
+        "pulse-subtle": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.8" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "wave": {
+          "0%": { transform: "translateY(0)" },
+          "25%": { transform: "translateY(-15px)" },
+          "50%": { transform: "translateY(0)" },
+          "75%": { transform: "translateY(15px)" },
+          "100%": { transform: "translateY(0)" },
+        },
+        "spin-slow": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        // Hinzugefügte Animationen aus der zweiten Konfiguration
+        "float-in": {
+          "0%": { transform: "translateY(10px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        "scale-in": {
+          "0%": { transform: "scale(0.95)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -154,6 +224,14 @@ module.exports = withMT({
         "flip-in": "flip-in 0.4s ease-out",
         "flip-out": "flip-out 0.4s ease-out",
         "card-hover": "card-hover 0.3s ease-out forwards",
+        "button-pulse": "button-pulse 2s infinite",
+        "pulse-subtle": "pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "float": "float 3s ease-in-out infinite",
+        "wave": "wave 2s ease-in-out infinite",
+        "spin-slow": "spin-slow 3s linear infinite",
+        // Hinzugefügte Animationen aus der zweiten Konfiguration
+        "float-in": "float-in 0.5s ease-out",
+        "scale-in": "scale-in 0.3s ease-out",
       },
     },
   },
@@ -161,7 +239,7 @@ module.exports = withMT({
     function ({ addUtilities }) {
       addUtilities({
         ".header-button": {
-          "padding": "0.75rem 1.5rem",
+          padding: "0.75rem 1.5rem",
           "font-size": "1.25rem",
           "font-weight": "600",
         },
