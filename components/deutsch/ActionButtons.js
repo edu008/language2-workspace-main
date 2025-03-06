@@ -1,3 +1,5 @@
+// components/ActionButtons.js
+import React from "react";
 import styles from "../../styles/ActionButtons.module.css";
 
 export default function ActionButtons({ onCorrect, onIncorrect, isLoading }) {

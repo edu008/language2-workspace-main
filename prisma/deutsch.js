@@ -41,7 +41,6 @@ export const updateDeutsch = async (id, Article, Artikel, Definition, Prefix, Ro
 export const getDeutsch = async () => {
   try {
     const deutsch = await prisma.deutschs.findMany();
-    console.log("getDeutsch result:", deutsch); // Debugging
     return deutsch;
   } catch (error) {
     console.error('Error fetching Deutsch:', error);

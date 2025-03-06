@@ -1,37 +1,27 @@
-import {
-  getDeutsch,
-  createDeutsch,
-  updateDeutsch
-} from '../../prisma/deutsch'
+import { getDeutsch, createDeutsch, updateDeutsch, getDeutschCount } from "../../prisma/deutsch";
 
-export default async function handle(req, res) {
+export default async function handler(req, res) {
   try {
-    switch (req.method) {
-      case 'GET': {
-        const deutsch = await getDeutsch()
-        return res.json(deutsch)
-      }
-      case 'POST': {
-        const { Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word } = req.body
-          const de = await createDeutsch(Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word)
-          return res.json(de)
-      }
-    
-    case 'PUT': {
-      // Ändere 'Id' zu 'id' um mit der Backend-Funktion übereinzustimmen
-      const { id, Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word } = req.body
-        
-      // Debugging
-      console.log("Received update request with data:", req.body);
-        
-      const de = await updateDeutsch(id, Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word)
-      return res.json(de)
+    if (req.method === "GET") {
+      const deutschData = await getDeutsch();
+      return res.status(200).json(deutschData);
     }
-      default:
-        break
+
+    if (req.method === "POST") {
+      const { Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word } = req.body;
+      const newWord = await createDeutsch(Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word);
+      return res.status(201).json(newWord);
     }
+
+    if (req.method === "PUT") {
+      const { id, Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word } = req.body;
+      const updatedWord = await updateDeutsch(id, Article, Artikel, Definition, Prefix, Root, Structure, Transl_F, TypeOfWord, Word);
+      return res.status(200).json(updatedWord);
+    }
+
+    return res.status(405).json({ error: "Method Not Allowed" });
   } catch (error) {
-    console.error("API Error:", error);
-    return res.status(500).json({ ...error, message: error.message })
+    console.error("❌ Fehler in /api/deutsch:", error);
+    return res.status(500).json({ error: "Interner Serverfehler" });
   }
 }

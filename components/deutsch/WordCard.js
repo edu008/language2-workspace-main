@@ -1,153 +1,133 @@
-import { animated, useSpring, useTransition } from "@react-spring/web";
+import { useState, useEffect, useContext, useRef } from "react";
+import { motion } from "framer-motion";
 import styles from "../../styles/WordCard.module.css";
-import { useState, useCallback, useRef } from "react";
+import { AppContext } from "../../pages/context/AppContext";
 
-export default function WordCard({ wordData, showTranslation, onFlip }) {
-  if (!wordData) {
-    return <div>Loading...</div>;
+export default function WordCard({ showTranslation, onFlip }) {
+  const { currentDeutsch } = useContext(AppContext);
+  const [isVisible, setIsVisible] = useState(false);
+  const [cardHeight, setCardHeight] = useState("auto");
+  const frontCardRef = useRef(null);
+  const backCardRef = useRef(null);
+
+  // Effekt für die Einblendanimation
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  // Effekt zur Berechnung der Kartenhöhe basierend auf dem Inhalt
+  useEffect(() => {
+    if (currentDeutsch && frontCardRef.current && backCardRef.current) {
+      // Wir entfernen temporär die absolute Positionierung, um die natürliche Höhe zu messen
+      frontCardRef.current.style.position = "static";
+      backCardRef.current.style.position = "static";
+      backCardRef.current.style.transform = "none";
+      
+      // Messen der Höhe beider Seiten
+      const frontHeight = frontCardRef.current.offsetHeight;
+      const backHeight = backCardRef.current.offsetHeight;
+      
+      // Wiederherstellen der ursprünglichen Stile
+      frontCardRef.current.style.position = "absolute";
+      backCardRef.current.style.position = "absolute";
+      backCardRef.current.style.transform = "rotateY(180deg)";
+      
+      // Verwenden der größeren Höhe für beide Seiten
+      const maxHeight = Math.max(frontHeight, backHeight, 440); // Mindesthöhe von 440px
+      setCardHeight(`${maxHeight}px`);
+    }
+  }, [currentDeutsch]);
+
+  if (!currentDeutsch) {
+    return (
+      <div className="w-full min-h-[440px] rounded-2xl bg-gray-200 animate-pulse flex items-center justify-center">
+        <p className="text-gray-500">Lade Daten...</p>
+      </div>
+    );
   }
 
-  const formattedDate = wordData.dateEntryWord
-    ? new Date(wordData.dateEntryWord).toLocaleDateString("de-DE")
+  const formattedDate = currentDeutsch.DateEntryWord
+    ? new Date(currentDeutsch.DateEntryWord).toLocaleDateString("de-DE")
     : "Datum nicht verfügbar";
 
-  const [isFlipping, setIsFlipping] = useState(false); // Umbenannt für Klarheit
-  const animationComplete = useRef(true); // Verfolgt, ob die Animation abgeschlossen ist
-
-  // Handle Flip mit präziserer Kontrolle
-  const handleFlip = useCallback(() => {
-    if (!animationComplete.current || isFlipping) return; // Verhindere Mehrfachklicks
-
-    setIsFlipping(true);
-    animationComplete.current = false; // Markiere, dass eine Animation läuft
-    onFlip(); // Umschalten zwischen Wort und Übersetzung
-
-    // Setze den Status zurück, sobald die Animation abgeschlossen ist
-    setTimeout(() => {
-      setIsFlipping(false);
-      animationComplete.current = true;
-    }, 900); // 900ms = 800ms Animation + 100ms Puffer
-  }, [onFlip, isFlipping]);
-
-  // Basis-Animation für die gesamte Karte (Skalierung und leichte Drehung)
-  const cardSpring = useSpring({
-    from: { scale: 0.85, rotateX: "10deg", translateY: 30 },
-    to: { scale: 1, rotateX: "0deg", translateY: 0 },
-    config: { duration: 800, easing: (t) => t * t * (3 - 2 * t) }, // easeInOut
-    onRest: () => {
-      // Optional, falls zusätzliche Logik benötigt wird
-    },
-  });
-
-  // Übergang für den Inhalt (Flip-Effekt mit Rotation und Verschiebung)
-  const transitions = useTransition(showTranslation, {
-    from: { scale: 0.9, rotateY: "90deg", translateY: 20, opacity: 0 }, // Hinzugefügt Opacity für Übergang
-    enter: { scale: 1, rotateY: "0deg", translateY: 0, opacity: 1 },
-    leave: { scale: 0.9, rotateY: "-90deg", translateY: 20, opacity: 0 },
-    config: { duration: 800 },
-    unique: true, // Stellt sicher, dass nur eine Instanz gleichzeitig existiert
-    exitBeforeEnter: true, // Verhindert das Überlagern von alten und neuen Elementen
-  });
-
-  // Individuelle Animationen für die Wort-Details (Skalierung und Verschiebung)
-  const detailSpring = useSpring({
-    from: { scale: 0.95, translateY: 15 },
-    to: { scale: 1, translateY: 0 },
-    delay: showTranslation ? 0 : 100, // Verzögerung nur bei Wortanzeige
-  });
-
   return (
-    <animated.div
-      style={{
-        ...cardSpring,
-        position: "relative",
-        transformStyle: "preserve-3d", // Für 3D-Effekte
-      }}
-      onClick={handleFlip} // Direktes Klicken auf die animierte Karte
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="perspective-1000"
     >
-      {transitions((style, item) => (
-        <animated.div style={style}>
-          <div className={styles.cardContainer}>
-            <div className={styles.topRightInfo}>
-              Klicken zum {item ? "Wort" : "Übersetzung"} anzeigen
+      <div
+        className="w-full relative preserve-3d cursor-pointer"
+        onClick={onFlip}
+        style={{
+          height: cardHeight,
+          transformStyle: "preserve-3d",
+          transition: "transform 0.6s",
+          transform: showTranslation ? "rotateY(180deg)" : "rotateY(0deg)",
+        }}
+      >
+        {/* Vorderseite der Karte */}
+        <div
+          ref={frontCardRef}
+          className="absolute inset-0 rounded-2xl p-8 flex flex-col justify-between bg-gradient-to-br from-blue-400 to-indigo-600 text-white shadow-xl border border-white/20 backdrop-blur-sm"
+          style={{ backfaceVisibility: "hidden" }}
+        >
+          <div>
+            <h2 className="text-3xl font-bold mb-6">{currentDeutsch.Word || "Unbekannt"}</h2>
+            {(currentDeutsch.Artikel || currentDeutsch.Prefix || currentDeutsch.Root) && (
+  <p className="inline-block px-3 py-1 mb-4 text-xl font-bold bg-white/20 rounded-full backdrop-blur-sm">
+    {currentDeutsch.Artikel || ""}{" "}
+    {currentDeutsch.Prefix && currentDeutsch.Root
+      ? `${currentDeutsch.Prefix}- ${currentDeutsch.Root}`
+      : `${currentDeutsch.Prefix || ""}${currentDeutsch.Root || ""}`}
+  </p>
+)}
+
+
+            {currentDeutsch.Definition && (
+              <p className="text-white/70">Struktur: {currentDeutsch.Definition}</p>
+            )}
+            {currentDeutsch.TypeOfWord?.length > 0 && (
+              <p className="text-white/70">Wortart: {currentDeutsch.TypeOfWord.map((t) => t.TypeOfWord).join(", ")}</p>
+            )}
+            {currentDeutsch.Root && (
+              <p className="text-white/70">Stamm: {currentDeutsch.Root}</p>
+            )}
+            <div className="mt-6 pt-4 border-t border-white/10">
+              <h4 className="text-lg font-semibold text-white mb-2">Beispiel</h4>
+              <div className="space-y-4">
+                {Array.isArray(currentDeutsch.Article) && currentDeutsch.Article.length > 0 ? (
+                  currentDeutsch.Article.map((example, index) => (
+                    <div key={index} className="space-y-2 leading-relaxed bg-white/20 p-2 rounded-md">
+                      <p className="text-white ">{example.Sentence_D || "Kein Satz verfügbar"}</p>
+                      <p className="text-sm text-white/60">Quelle: {example.Source || "Keine Quelle verfügbar"}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-white/60">Keine Beispiele verfügbar.</p>
+                )}
+              </div>
             </div>
-
-            {/* Vorderseite (Wort & Details) */}
-            {!item && (
-              <div className={styles.innerContent}>
-                <animated.p
-                  style={{ ...detailSpring, delay: 100 }}
-                  className="text-2xl text-blue-700"
-                >
-                  {wordData.article}
-                </animated.p>
-                <animated.h2
-                  style={{ ...detailSpring, delay: 200 }}
-                  className="text-5xl font-bold text-blue-900"
-                >
-                  {wordData.word}
-                </animated.h2>
-                <animated.p
-                  style={{ ...detailSpring, delay: 300 }}
-                  className="text-xl text-blue-700"
-                >
-                  {wordData.prefix} / {wordData.root}
-                </animated.p>
-                {wordData.structure && (
-                  <animated.p
-                    style={{ ...detailSpring, delay: 400 }}
-                    className="text-lg text-gray-700"
-                  >
-                    Struktur: {wordData.structure}
-                  </animated.p>
-                )}
-                {wordData.typeOfWord && wordData.typeOfWord.length > 0 && (
-                  <animated.p
-                    style={{ ...detailSpring, delay: 500 }}
-                    className="text-lg text-gray-700"
-                  >
-                    Wortart: {wordData.typeOfWord.join(", ")}
-                  </animated.p>
-                )}
-                {wordData.additionalInfo && (
-                  <animated.p
-                    style={{ ...detailSpring, delay: 600 }}
-                    className="text-lg text-gray-700"
-                  >
-                    Stamm: {wordData.additionalInfo}
-                  </animated.p>
-                )}
-                <div className="mt-8 rounded-md border p-4 overflow-y-auto bg-white shadow-inner">
-                  <h4 className="text-lg font-semibold text-gray-700 mb-2">Beispiel</h4>
-                  <div className="space-y-4">
-                    {wordData.examples.map((example, index) => (
-                      <div key={index} className="space-y-2">
-                        <p className="text-blue-900">{example.sentence}</p>
-                        <p className="text-sm text-gray-500">Quelle: {example.source}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="text-right text-xs text-gray-500 mt-2">
-                  Hinzugefügt am: {formattedDate}
-                </div>
-              </div>
-            )}
-
-            {/* Rückseite (nur Übersetzung) */}
-            {item && (
-              <div className="flex items-center justify-center h-full w-full">
-                <animated.h3
-                  style={detailSpring}
-                  className="text-4xl font-medium text-blue-900"
-                >
-                  {wordData.translation}
-                </animated.h3>
-              </div>
-            )}
           </div>
-        </animated.div>
-      ))}
-    </animated.div>
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <p className="text-sm text-white/60">Hinzugefügt am: {formattedDate}</p>
+          </div>
+        </div>
+
+        {/* Rückseite der Karte */}
+        <div
+          ref={backCardRef}
+          className="absolute inset-0 rounded-2xl p-8 flex flex-col justify-center bg-gradient-to-br from-purple-400 to-pink-600 text-white shadow-xl border border-white/20 backdrop-blur-sm"
+          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+        >
+          <div>
+            <p className="text-white leading-relaxed text-3xl font-bold text-center">
+              {currentDeutsch.Transl_F?.map((t) => t.Transl_F).join("; ") || "Keine Übersetzung"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }

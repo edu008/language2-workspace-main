@@ -1,156 +1,117 @@
-import { animated, useSpring, useTransition } from "@react-spring/web";
-import styles from "../../styles/WordCard.module.css"; // Du kannst dieselben Stile verwenden oder ein neues Modul erstellen
-import { useState, useCallback, useRef } from "react";
+// components/deutsch/WordCardPraeposition.js
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import styles from "../../styles/WordCard.module.css"; // Wiederverwendung der gleichen Stile wie bei WordCard
 
-export default function PraepositionCard({ wordData, showTranslation, onFlip, trained, totalCount }) {
+export default function PraepositionCard({ wordData, showTranslation, onFlip }) {
+  const [isVisible, setIsVisible] = useState(false);
+  const [cardHeight, setCardHeight] = useState("auto");
+  const frontCardRef = useRef(null);
+  const backCardRef = useRef(null);
+
+  // Effekt für die Einblendanimation
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  // Effekt zur Berechnung der Kartenhöhe basierend auf dem Inhalt
+  useEffect(() => {
+    if (wordData && frontCardRef.current && backCardRef.current) {
+      frontCardRef.current.style.position = "static";
+      backCardRef.current.style.position = "static";
+      backCardRef.current.style.transform = "none";
+
+      const frontHeight = frontCardRef.current.offsetHeight;
+      const backHeight = backCardRef.current.offsetHeight;
+
+      frontCardRef.current.style.position = "absolute";
+      backCardRef.current.style.position = "absolute";
+      backCardRef.current.style.transform = "rotateY(180deg)";
+
+      const maxHeight = Math.max(frontHeight, backHeight, 440); // Mindesthöhe von 440px
+      setCardHeight(`${maxHeight}px`);
+    }
+  }, [wordData]);
+
   if (!wordData) {
-    return <div>Loading...</div>;
+    return (
+      <div className="w-full min-h-[440px] rounded-2xl bg-gray-200 animate-pulse flex items-center justify-center">
+        <p className="text-gray-500">Lade Daten...</p>
+      </div>
+    );
   }
 
-  // Formatierung des Datums, falls vorhanden (hier null, daher Fallback)
   const formattedDate = wordData.datum
     ? new Date(wordData.datum).toLocaleDateString("de-DE")
     : "Datum nicht verfügbar";
 
-  const [isFlipping, setIsFlipping] = useState(false); // Umbenannt für Klarheit
-  const animationComplete = useRef(true); // Verfolgt, ob die Animation abgeschlossen ist
-
-  // Handle Flip mit präziserer Kontrolle
-  const handleFlip = useCallback(() => {
-    if (!animationComplete.current || isFlipping) return; // Verhindere Mehrfachklicks
-
-    setIsFlipping(true);
-    animationComplete.current = false; // Markiere, dass eine Animation läuft
-    onFlip(); // Umschalten zwischen Satz und Lösung
-
-    // Setze den Status zurück, sobald die Animation abgeschlossen ist
-    setTimeout(() => {
-      setIsFlipping(false);
-      animationComplete.current = true;
-    }, 900); // 900ms = 800ms Animation + 100ms Puffer
-  }, [onFlip, isFlipping]);
-
-  // Basis-Animation für die gesamte Karte (Skalierung und leichte Drehung)
-  const cardSpring = useSpring({
-    from: { scale: 0.85, rotateX: "10deg", translateY: 30 },
-    to: { scale: 1, rotateX: "0deg", translateY: 0 },
-    config: { duration: 800, easing: (t) => t * t * (3 - 2 * t) }, // easeInOut
-    onRest: () => {
-      // Optional, falls zusätzliche Logik benötigt wird
-    },
-  });
-
-  // Übergang für den Inhalt (Flip-Effekt mit Rotation und Verschiebung)
-  const transitions = useTransition(showTranslation, {
-    from: { scale: 0.9, rotateY: "90deg", translateY: 20, opacity: 0 }, // Hinzugefügt Opacity für Übergang
-    enter: { scale: 1, rotateY: "0deg", translateY: 0, opacity: 1 },
-    leave: { scale: 0.9, rotateY: "-90deg", translateY: 20, opacity: 0 },
-    config: { duration: 800 },
-    unique: true, // Stellt sicher, dass nur eine Instanz gleichzeitig existiert
-    exitBeforeEnter: true, // Verhindert das Überlagern von alten und neuen Elementen
-  });
-
-  // Individuelle Animationen für die Wort-Details (Skalierung und Verschiebung)
-  const detailSpring = useSpring({
-    from: { scale: 0.95, translateY: 15 },
-    to: { scale: 1, translateY: 0 },
-    delay: showTranslation ? 0 : 100, // Verzögerung nur bei Anzeige des Satzes
-  });
-
-  // Funktion, um den Satz mit Platzhaltern zu ersetzen und die Lösungen fett zu machen
+  // Funktion, um den Satz mit Platzhaltern zu ersetzen und Lösungen fett zu machen
   const formatSentenceWithSolutions = () => {
-    // Find all placeholder underscores
     const placeholders = wordData.satz.match(/_/g) || [];
-    
-    // Handle solution as array (even if it's a single string)
-    let solutions = Array.isArray(wordData.loesung) ? wordData.loesung : wordData.loesung.split(',').map(s => s.trim());
-    
-    // If only one word but multiple placeholders, replicate it for all placeholders
+    let solutions = Array.isArray(wordData.loesung) ? wordData.loesung : wordData.loesung.split(",").map((s) => s.trim());
+
     if (solutions.length === 1 && placeholders.length > 1) {
       solutions = Array(placeholders.length).fill(solutions[0]);
     }
-    
-    // Replace each underscore with the corresponding solution in bold
+
     let formattedSentence = wordData.satz;
-    solutions.forEach((solution, index) => {
-      formattedSentence = formattedSentence.replace('_', `<strong>${solution}</strong>`);
+    solutions.forEach((solution) => {
+      formattedSentence = formattedSentence.replace("_", `<strong>${solution}</strong>`);
     });
-    
+
     return formattedSentence;
   };
 
   return (
-    <animated.div
-      style={{
-        ...cardSpring,
-        position: "relative",
-        transformStyle: "preserve-3d", // Für 3D-Effekte
-      }}
-      onClick={handleFlip} // Direktes Klicken auf die animierte Karte
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="perspective-1000"
     >
-      {transitions((style, item) => (
-        <animated.div style={style}>
-          <div className={`${styles.cardContainer} ${item ? styles.translation : ""}`}>
-            <div className={styles.topRightInfo}>
-              Klicken zum {item ? "Satz" : "Lösung"} anzeigen
-            </div>
-            {trained !== undefined && totalCount !== undefined && (
-              <div className={styles.progressInfo}>
-                Fortschritt: {trained} von {totalCount} gelernt
-              </div>
-            )}
-
-            {/* Vorderseite (Satz & Details) */}
-            {!item && (
-              <div className={styles.innerContent}>
-                <animated.h2
-                  style={{ ...detailSpring, delay: 200 }}
-                  className="text-5xl font-bold text-blue-900"
-                >
-                  {wordData.satz.replace("–", <span className={styles.gapHighlight}>–</span>)}
-                </animated.h2>
-                {wordData.quelle && (
-                  <animated.p
-                    style={{ ...detailSpring, delay: 300 }}
-                    className="text-lg text-gray-700"
-                  >
-                    Quelle: {wordData.quelle}
-                  </animated.p>
-                )}
-                <div className="text-right text-xs text-gray-500 mt-2">
-                  Hinzugefügt am: {formattedDate}
-                </div>
-              </div>
-            )}
-
-            {/* Rückseite (Lösung und vollständiger Satz) */}
-            {item && (
-              <div className={styles.innerContent}>
-                <animated.h3
-                  style={{ ...detailSpring, delay: 100 }}
-                  className="text-4xl font-semibold text-black mb-4"
-                >
-                  Lösung:
-                </animated.h3>
-                <animated.h3
-                  style={detailSpring}
-                  className="text-5xl font-medium text-blue-900 mb-4"
-                >
-                  {wordData.loesung}
-                </animated.h3>
-                <animated.p
-                  style={{ ...detailSpring, delay: 200 }}
-                  className="text-2xl font-medium text-green-600 mt-8 rounded-md border p-4 bg-white shadow-inner"
-                  dangerouslySetInnerHTML={{ __html: formatSentenceWithSolutions() }}
-                />
-                <div className={`${styles.date} text-right text-xs text-gray-500 mt-2`}>
-                  Hinzugefügt am: {formattedDate}
-                </div>
-              </div>
+      <div
+        className="w-full relative preserve-3d cursor-pointer"
+        onClick={onFlip}
+        style={{
+          height: cardHeight,
+          transformStyle: "preserve-3d",
+          transition: "transform 0.6s",
+          transform: showTranslation ? "rotateY(180deg)" : "rotateY(0deg)",
+        }}
+      >
+        {/* Vorderseite der Karte */}
+        <div
+          ref={frontCardRef}
+          className="absolute inset-0 rounded-2xl p-8 flex flex-col justify-between bg-gradient-to-br from-blue-400 to-indigo-600 text-white shadow-xl border border-white/20 backdrop-blur-sm"
+          style={{ backfaceVisibility: "hidden" }}
+        >
+          <div>
+            <h2 className="text-3xl font-bold mb-6">{wordData.satz || "Unbekannt"}</h2>
+            {wordData.quelle && (
+              <p className="text-white/70">Quelle: {wordData.quelle}</p>
             )}
           </div>
-        </animated.div>
-      ))}
-    </animated.div>
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <p className="text-sm text-white/60">Hinzugefügt am: {formattedDate}</p>
+          </div>
+        </div>
+
+        {/* Rückseite der Karte */}
+        <div
+          ref={backCardRef}
+          className="absolute inset-0 rounded-2xl p-8 flex flex-col justify-center bg-gradient-to-br from-purple-400 to-pink-600 text-white shadow-xl border border-white/20 backdrop-blur-sm"
+          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+        >
+          <div>
+            <h3 className="text-2xl font-semibold mb-4">Lösung:</h3>
+            <p className="text-3xl font-bold text-center mb-6">{wordData.loesung || "Keine Lösung"}</p>
+            <p
+              className="text-xl font-medium text-green-100 rounded-md border p-4 bg-white/20 shadow-inner"
+              dangerouslySetInnerHTML={{ __html: formatSentenceWithSolutions() }}
+            />
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
