@@ -1,4 +1,4 @@
-// pages/context/AppContext.js
+// AppContext.js
 import { createContext, useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
@@ -9,147 +9,279 @@ export const AppProvider = ({ children }) => {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  // Deutsch-Zustände
-  const [filteredDeutsch, setFilteredDeutsch] = useState([]);
+  // Unified state for all features
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [trainedCount, setTrainedCount] = useState(0);
+
+  // Common filter state (currently only for deutsch, can be extended)
   const [searchInput, setSearchInput] = useState("");
   const [newTypeOfWordFilter, setNewTypeOfWordFilter] = useState("");
   const [isRootSearch, setIsRootSearch] = useState(false);
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
-  const [deutsch, setDeutsch] = useState([]);
-  const [standingSummary, setStandingSummary] = useState([]);
-  const [isDataLoaded, setIsDataLoaded] = useState(false); // Einziger Ladezustand, Großschreibung korrigiert
-  const [currentDeutsch, setCurrentDeutsch] = useState(null);
-  const [untrainedPool, setUntrainedPool] = useState([]);
-  const [repeatPool, setRepeatPool] = useState([]);
-  const [learnedPool, setLearnedPool] = useState([]);
-  const [trainedCount, setTrainedCount] = useState(0);
-  const [attempts, setAttempts] = useState(0);
-  const [wordCounter, setWordCounter] = useState(0);
-  const [nextRepeatAt, setNextRepeatAt] = useState(Math.floor(Math.random() * 8) + 3);
-
-  // Präpositionen-Zustände
-  const [praeposition, setPraeposition] = useState([]);
-  const [standingSummaryPraep, setStandingSummaryPraep] = useState([]);
-  const [currentPraeposition, setCurrentPraeposition] = useState(null);
-  const [untrainedPoolPraep, setUntrainedPoolPraep] = useState([]);
-  const [repeatPoolPraep, setRepeatPoolPraep] = useState([]);
-  const [learnedPoolPraep, setLearnedPoolPraep] = useState([]);
-  const [wordCounterPraep, setWordCounterPraep] = useState(0);
-  const [nextRepeatAtPraep, setNextRepeatAtPraep] = useState(Math.floor(Math.random() * 8) + 3);
-
-  // Vorherige Filterwerte speichern
   const [prevFilterState, setPrevFilterState] = useState({
     searchInput: "",
     newTypeOfWordFilter: "",
     isRootSearch: false,
   });
 
+  // Feature-specific state with consistent naming pattern
+  const [data, setData] = useState({
+    deutsch: [],
+    praeposition: [],
+    sprichwort: [],
+    redewendung: [],
+    praepverben: [], // Hinzugefügt
+  });
 
-  const praepositionStats = useMemo(() => {
-    const totalCountPraep = praeposition.length; // Definiert totalCount als die Länge des praeposition-Arrays
-    
-    const progressPraep = totalCountPraep > 0 ? Math.round((trainedCount / totalCountPraep) * 100) || 0 : 0; // Definiert progress basierend auf trainedCountPraep und totalCount
-    return { totalCountPraep, progressPraep };
-  }, [praeposition, trainedCount]);
+  const [filteredData, setFilteredData] = useState({
+    deutsch: [],
+    sprichwort: [],
+    redewendung: [],
+    praepverben: [], // Hinzugefügt, falls Filter später benötigt
+  });
 
+  const [standingSummary, setStandingSummary] = useState({
+    deutsch: [],
+    praeposition: [],
+    sprichwort: [],
+    redewendung: [],
+    praepverben: [], // Hinzugefügt
+  });
 
-  const deutschStats = useMemo(() => {
-    const totalCount = deutsch.length; // Definiert totalCount als die Länge des praeposition-Arrays
-    const progress = totalCount > 0 ? Math.round((trainedCount / totalCount) * 100) || 0 : 0; // Definiert progress basierend auf trainedCountPraep und totalCount
-    return { totalCount, progress };
-  }, [deutsch, trainedCount]);
+  const [currentItem, setCurrentItem] = useState({
+    deutsch: null,
+    praeposition: null,
+    sprichwort: null,
+    redewendung: null,
+    praepverben: null, // Hinzugefügt
+  });
 
+  const [pools, setPools] = useState({
+    deutsch: { untrained: [], repeat: [], learned: [] },
+    praeposition: { untrained: [], repeat: [], learned: [] },
+    sprichwort: { untrained: [], repeat: [], learned: [] },
+    redewendung: { untrained: [], repeat: [], learned: [] },
+    praepverben: { untrained: [], repeat: [], learned: [] }, // Hinzugefügt
+  });
 
+  const [counters, setCounters] = useState({
+    deutsch: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 },
+    praeposition: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 },
+    sprichwort: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 },
+    redewendung: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 },
+    praepverben: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 }, // Hinzugefügt
+  });
 
-  // Debugging für isDataLoaded
+  // Computed stats for all features
+  const stats = useMemo(() => {
+    return {
+      deutsch: {
+        totalCount: data.deutsch.length,
+        progress: data.deutsch.length > 0 ? Math.round((trainedCount / data.deutsch.length) * 100) || 0 : 0,
+      },
+      praeposition: {
+        totalCount: data.praeposition.length,
+        progress: data.praeposition.length > 0 ? Math.round((trainedCount / data.praeposition.length) * 100) || 0 : 0,
+      },
+      sprichwort: {
+        totalCount: data.sprichwort.length,
+        progress: data.sprichwort.length > 0 ? Math.round((trainedCount / data.sprichwort.length) * 100) || 0 : 0,
+      },
+      redewendung: {
+        totalCount: data.redewendung.length,
+        progress: data.redewendung.length > 0 ? Math.round((trainedCount / data.redewendung.length) * 100) || 0 : 0,
+      },
+      praepverben: {
+        totalCount: data.praepverben.length,
+        progress: data.praepverben.length > 0 ? Math.round((trainedCount / data.praepverben.length) * 100) || 0 : 0, // Hinzugefügt
+      },
+    };
+  }, [data, trainedCount]);
+
+  // Unified data loading based on current route
   useEffect(() => {
-  }, [isDataLoaded]);
-
-  // Initiale Datenladung für Deutsch
-  useEffect(() => {
-    if (router.pathname === "/deutsch" && status === "authenticated" && !isDataLoaded) {
-      loadInitialData();
+    const currentFeature = getCurrentFeature();
+    if (currentFeature && status === "authenticated" && !isDataLoaded) {
+      loadInitialData(currentFeature);
     }
   }, [router.pathname, session, status]);
 
-  // Initiale Datenladung für Präpositionen
+  // Unified word selection
   useEffect(() => {
-    if (router.pathname === "/praeposition" && status === "authenticated" && !isDataLoaded) {
-      loadInitialDataPraep();
+    const currentFeature = getCurrentFeature();
+    if (
+      currentFeature &&
+      isDataLoaded &&
+      !currentItem[currentFeature] &&
+      (pools[currentFeature].untrained.length > 0 || pools[currentFeature].repeat.length > 0)
+    ) {
+      selectNextWord(currentFeature);
     }
-  }, [router.pathname, session, status]);
+  }, [isDataLoaded, pools, currentItem, router.pathname]);
 
-  // Wortauswahl für Deutsch
-  useEffect(() => {
-    if (isDataLoaded && !currentDeutsch && (untrainedPool.length > 0 || repeatPool.length > 0)) {
-      selectNextWord();
-    }
-  }, [isDataLoaded, untrainedPool.length, repeatPool.length, currentDeutsch]);
+  // Helper to determine current feature based on route
+  const getCurrentFeature = () => {
+    if (router.pathname === "/deutsch") return "deutsch";
+    if (router.pathname === "/praeposition") return "praeposition";
+    if (router.pathname === "/sprichwort") return "sprichwort";
+    if (router.pathname === "/redewendung") return "redewendung";
+    if (router.pathname === "/praepverben") return "praepverben"; // Hinzugefügt
+    return null;
+  };
 
-  // Wortauswahl für Präpositionen
-  useEffect(() => {
-    if (isDataLoaded && !currentPraeposition && (untrainedPoolPraep.length > 0 || repeatPoolPraep.length > 0)) {
-      selectNextWordPraep();
-    }
-  }, [isDataLoaded, untrainedPoolPraep.length, repeatPoolPraep.length, currentPraeposition]);
+  // Unified data loading function
+  const loadInitialData = async (feature) => {
+    if (!session) return;
 
-  useEffect(() => {
-  }, [praeposition]);
-  
-  const loadInitialData = async () => {
-    if (!session || isDataLoaded) {
-      return;
-    }
+    setIsDataLoaded(false);
 
     try {
-      const deutschRes = await fetch("/api/deutsch", {
+      const res = await fetch(`/api/${feature}`, {
         headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
       });
-      if (!deutschRes.ok) throw new Error("Fehler beim Laden der Wörter");
 
-      const deutschData = await deutschRes.json();
-      setDeutsch(deutschData);
-      setUntrainedPool(deutschData);
+      if (!res.ok) throw new Error(`Fehler beim Laden der ${feature} Daten`);
 
-      await loadStanding(deutschData);
+      const featureData = await res.json();
 
-      setIsDataLoaded(true); // Korrigierte Großschreibung
+      setData((prev) => ({
+        ...prev,
+        [feature]: featureData,
+      }));
+
+      setPools((prev) => ({
+        ...prev,
+        [feature]: {
+          ...prev[feature],
+          untrained: featureData,
+        },
+      }));
+
+      await loadStanding(feature, featureData);
+
+      setIsDataLoaded(true);
     } catch (error) {
-      console.error("[loadInitialData] Fehler:", error.message);
-      resetState();
-      setIsDataLoaded(true); // Auch im Fehlerfall setzen
+      console.error(`[loadInitialData:${feature}] Fehler:`, error.message);
+      resetState(feature);
+      setIsDataLoaded(true);
     }
   };
 
-  const loadInitialDataPraep = async () => {
-    if (!session || isDataLoaded) {
-      return;
-    }
+  // Unified standing loading
+  const loadStanding = async (feature, featureData) => {
+    if (!session) return;
 
     try {
-      const praepRes = await fetch("/api/praeposition", {
-        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+      const standingRes = await fetch(
+        `/api/standing?user=${encodeURIComponent(session.user.email)}&kategorie=${feature}`,
+        {
+          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+        }
+      );
+
+      if (!standingRes.ok) throw new Error("Fehler beim Laden des Lernstands");
+
+      const standingData = await standingRes.json();
+
+      if (!standingData.summary || !Array.isArray(standingData.summary)) {
+        setStandingSummary((prev) => ({
+          ...prev,
+          [feature]: [],
+        }));
+        return;
+      }
+
+      if (!featureData || featureData.length === 0) {
+        await waitForData(feature);
+      }
+
+      const mappedStandings = standingData.summary.map((item) => {
+        const foundItem = featureData.find((d) => d.id.toString() === String(item.exercise || item.id));
+
+        if (!foundItem) {
+          return {
+            exercise: item.exercise || item.id,
+            correct: item.correct || 0,
+            attempts: item.attempts || 0,
+            ...(feature === "deutsch"
+              ? { Word: "Unbekannt", Artikel: "", Transl_F: "Keine Übersetzung" }
+              : feature === "praeposition"
+              ? { Satz: "Unbekannt", Loesung: "Keine Lösung" }
+              : feature === "sprichwort"
+              ? { Sprichwort: "Unbekannt", Erklaerung: "Keine Erklärung" }
+              : feature === "redewendung"
+              ? { Redewendung: "Unbekannt", Erklaerung: "Keine Erklärung" }
+              : { Satz: "Unbekannt", Verb: "Unbekannt", Loesung: "Keine Lösung" }), // Hinzugefügt für praepverben
+          };
+        }
+
+        return {
+          exercise: item.exercise || item.id,
+          correct: item.correct || 0,
+          attempts: item.attempts || 0,
+          ...(feature === "deutsch"
+            ? {
+                Word: foundItem.Word || "Unbekannt",
+                Artikel: foundItem.Artikel || "",
+                Transl_F: foundItem.Transl_F?.[0]?.Transl_F || "Keine Übersetzung",
+              }
+            : feature === "praeposition"
+            ? {
+                Satz: foundItem.Satz || "Unbekannt",
+                Loesung: foundItem.Loesung || "Keine Lösung",
+              }
+            : feature === "sprichwort"
+            ? {
+                Sprichwort: foundItem.Sprichwort || "Unbekannt",
+                Erklaerung: foundItem.Erklaerung || "Keine Erklärung",
+                Wort: foundItem.Wort || "",
+                Beispiel: foundItem.Beispiel || "",
+                Quelle: foundItem.Quelle || "",
+                Datum: foundItem.Datum || "",
+              }
+            : feature === "redewendung"
+            ? {
+                Redewendung: foundItem.Redewendung || "Unbekannt",
+                Erklaerung: foundItem.Erklaerung || "Keine Erklärung",
+                Wort: foundItem.Wort || "",
+                Beispiel: foundItem.Beispiel || "",
+                Quelle: foundItem.Quelle || "",
+                Datum: foundItem.Datum || "",
+              }
+            : {
+                Satz: foundItem.Satz || "Unbekannt",
+                Verb: foundItem.Verb || "Unbekannt",
+                Loesung: foundItem.Loesung || "Keine Lösung",
+                Beispiele: foundItem.Beispiele || "",
+                Erklaerung: foundItem.Erklaerung || "Keine Erklärung",
+                quelle: foundItem.quelle || "",
+                Datum: foundItem.Datum || "",
+              }), // Hinzugefügt für praepverben
+        };
       });
-      if (!praepRes.ok) throw new Error("Fehler beim Laden der Präpositionen");
 
-      const praepData = await praepRes.json();
-      setPraeposition(praepData);
+      applyStandingToWords(feature, mappedStandings, featureData);
 
-      setUntrainedPoolPraep(praepData);
-
-      await loadStandingPraep(praepData);
-
-      setIsDataLoaded(true); // Korrigierte Großschreibung
+      setStandingSummary((prev) => ({
+        ...prev,
+        [feature]: mappedStandings,
+      }));
     } catch (error) {
-      resetStatePraep();
-      setIsDataLoaded(true); // Auch im Fehlerfall setzen
+      console.error(`[loadStanding:${feature}] Fehler:`, error.message);
+      resetState(feature);
+      setStandingSummary((prev) => ({
+        ...prev,
+        [feature]: [],
+      }));
     }
   };
 
-  const waitForDeutsch = async () => {
+  // Helper to wait for data to be available
+  const waitForData = async (feature) => {
     return new Promise((resolve) => {
       const checkInterval = setInterval(() => {
-        if (deutsch.length > 0) {
+        if (data[feature].length > 0) {
           clearInterval(checkInterval);
           resolve();
         }
@@ -157,313 +289,147 @@ export const AppProvider = ({ children }) => {
     });
   };
 
-  const waitForPraeposition = async () => {
-    return new Promise((resolve) => {
-      const checkInterval = setInterval(() => {
-        if (praeposition.length > 0) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 100);
-    });
-  };
-
-  const loadStanding = async (deutschData) => {
-    if (!session) {
-      return;
-    }
-
-    try {
-      const standingRes = await fetch(
-        `/api/standing?user=${encodeURIComponent(session.user.email)}&kategorie=deutsch`,
-        {
-          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
-        }
-      );
-      if (!standingRes.ok) throw new Error("Fehler beim Laden des Lernstands");
-
-      const standingData = await standingRes.json();
-
-      if (!standingData.summary || !Array.isArray(standingData.summary)) {
-        setStandingSummary([]);
-        return;
-      }
-
-      if (!deutschData || deutschData.length === 0) {
-        await waitForDeutsch();
-      }
-
-      const deutschStandings = standingData.summary.map((item) => {
-        const word = deutschData.find((d) => d.id.toString() === String(item.exercise));
-        if (!word) {
-          return {
-            exercise: item.exercise,
-            correct: item.correct || 0,
-            attempts: item.attempts || 0,
-            Word: "Unbekannt",
-            Artikel: "",
-            Transl_F: "Keine Übersetzung",
-          };
-        }
-        return {
-          exercise: item.exercise,
-          correct: item.correct || 0,
-          attempts: item.attempts || 0,
-          Word: word.Word || "Unbekannt",
-          Artikel: word.Artikel || "",
-          Transl_F: word.Transl_F?.[0]?.Transl_F || "Keine Übersetzung",
-        };
-      });
-
-      applyStandingToWords(deutschStandings, deutschData);
-      setStandingSummary(deutschStandings);
-    } catch (error) {
-      console.error("[loadStanding] Fehler:", error.message);
-      resetState();
-      setStandingSummary([]);
-    }
-  };
-
-  const loadStandingPraep = async (praepData) => {
-    if (!session) {
-      return;
-    }
-  
-    try {
-      const standingRes = await fetch(
-        `/api/standing?user=${encodeURIComponent(session.user.email)}&kategorie=praeposition`,
-        {
-          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
-        }
-      );
-      if (!standingRes.ok) throw new Error("Fehler beim Laden des Lernstands");
-  
-      const standingData = await standingRes.json();
-  
-      if (!standingData.summary || !Array.isArray(standingData.summary)) {
-        console.warn("[loadStandingPraep] Keine oder ungültige summary-Daten:", standingData);
-        setStandingSummaryPraep([]);
-        return;
-      }
-  
-      // Überprüfe, ob die benötigten Felder vorhanden sind
-      const hasRequiredFields = standingData.summary.every(item => 
-        item.exercise !== undefined && item.correct !== undefined && item.attempts !== undefined
-      );
-      if (!hasRequiredFields) {
-        console.error("[loadStandingPraep] Fehlende Felder (exercise, correct, attempts) in Standing-Daten:", standingData.summary);
-      }
-  
-      if (!praepData || praepData.length === 0) {
-        await waitForPraeposition();
-      }
-  
-      const praepStandings = standingData.summary.map((item) => {
-        const praep = praepData.find((p) => p.id.toString() === String(item.exercise || item.id)); // Fallback auf item.id
-        if (!praep) {
-          console.warn("[loadStandingPraep] Keine Übereinstimmung für exercise:", item.exercise || item.id);
-          return {
-            exercise: item.exercise || item.id, // Fallback
-            correct: item.correct || 0,
-            attempts: item.attempts || 0,
-            Satz: "Unbekannt",
-            Loesung: "Keine Lösung",
-          };
-        }
-        return {
-          exercise: item.exercise || item.id, // Fallback
-          correct: item.correct || 0,
-          attempts: item.attempts || 0,
-          Satz: praep.Satz || "Unbekannt",
-          Loesung: praep.Loesung || "Keine Lösung",
-        };
-      });
-  
-      applyStandingToWordsPraep(praepStandings, praepData);
-      setStandingSummaryPraep(praepStandings);
-    } catch (error) {
-      resetStatePraep();
-      setStandingSummaryPraep([]);
-    }
-  };
-
-  const applyStandingToWords = (standing, deutschData) => {
+  // Unified function to apply standing to words
+  const applyStandingToWords = (feature, standing, featureData) => {
     const learnedIds = standing.filter((s) => s.correct === 2).map((s) => s.exercise.toString());
     const repeatIds = standing.filter((s) => s.correct < 2).map((s) => s.exercise.toString());
 
-    const untrainedWords = deutschData.filter(
-      (word) => !learnedIds.includes(word.id) && !repeatIds.includes(word.id)
+    const untrainedWords = featureData.filter(
+      (item) => !learnedIds.includes(item.id.toString()) && !repeatIds.includes(item.id.toString())
     );
-    const repeatWords = deutschData.filter((word) => repeatIds.includes(word.id));
-    const learnedWords = deutschData.filter((word) => learnedIds.includes(word.id));
+    const repeatWords = featureData.filter((item) => repeatIds.includes(item.id.toString()));
+    const learnedWords = featureData.filter((item) => learnedIds.includes(item.id.toString()));
 
-    setUntrainedPool(untrainedWords);
-    setRepeatPool(repeatWords);
-    setLearnedPool(learnedWords);
+    setPools((prev) => ({
+      ...prev,
+      [feature]: {
+        untrained: untrainedWords,
+        repeat: repeatWords,
+        learned: learnedWords,
+      },
+    }));
 
-    setAttempts(standing.reduce((max, s) => Math.max(max, s.attempts || 0), 0));
+    setAttempts(standing.reduce((sum, s) => sum + (s.attempts || 0), 0));
     setTrainedCount(learnedIds.length);
   };
 
-  const applyStandingToWordsPraep = (standing, praepData) => {
-    const learnedIds = standing.filter((s) => s.correct === 2).map((s) => s.exercise.toString());
-    const repeatIds = standing.filter((s) => s.correct < 2).map((s) => s.exercise.toString());
-  
-    const untrainedWords = praepData.filter(
-      (praep) => !learnedIds.includes(praep.id) && !repeatIds.includes(praep.id)
-    );
-    const repeatWords = praepData.filter((praep) => repeatIds.includes(praep.id));
-    const learnedWords = praepData.filter((praep) => learnedIds.includes(praep.id));
-  
-    setUntrainedPoolPraep(untrainedWords);
-    setRepeatPoolPraep(repeatWords);
-    setLearnedPoolPraep(learnedWords);
-  
-    const newAttempts = standing.reduce((max, s) => Math.max(max, s.attempts || 0), 0);
-    const newTrainedCount = learnedIds.length;
-    setAttempts(newAttempts);
-    setTrainedCount(newTrainedCount);
-  
-    setStandingSummaryPraep({
-      untrained: untrainedWords.length,
-      repeat: repeatWords.length,
-      learned: learnedWords.length,
-      attempts: newAttempts,
-      trainedCount: newTrainedCount,
-    });
-  };
+  // Unified state reset
+  const resetState = (feature) => {
+    setPools((prev) => ({
+      ...prev,
+      [feature]: {
+        untrained: data[feature],
+        repeat: [],
+        learned: [],
+      },
+    }));
 
-  const resetState = () => {
-    if (isDataLoaded) {
-      return;
-    }
-    setUntrainedPool(deutsch);
-    setRepeatPool([]);
-    setLearnedPool([]);
     setTrainedCount(0);
     setAttempts(0);
-    setCurrentDeutsch(null);
-    setStandingSummary([]);
-    setWordCounter(0);
-    setNextRepeatAt(Math.floor(Math.random() * 8) + 3);
-    setFilteredDeutsch([]);
-    setSearchInput("");
-    setNewTypeOfWordFilter("");
-    setIsRootSearch(false);
-    setIsApplyingFilters(false);
-  };
 
-  const resetStatePraep = () => {
-    if (isDataLoaded) return;
-    setUntrainedPoolPraep(praeposition);
-    setRepeatPoolPraep([]);
-    setLearnedPoolPraep([]);
-    setTrainedCount(0);
-    setAttempts(0);
-    setCurrentPraeposition(null);
-    setStandingSummaryPraep([]);
-    setWordCounterPraep(0);
-    setNextRepeatAtPraep(Math.floor(Math.random() * 8) + 3);
-  };
+    setCurrentItem((prev) => ({
+      ...prev,
+      [feature]: null,
+    }));
 
-  const resetPoolsToInitialState = () => {
-    applyStandingToWords(standingSummary, deutsch);
-  };
+    setStandingSummary((prev) => ({
+      ...prev,
+      [feature]: [],
+    }));
 
-  const selectNextWord = () => {
-    let selectedWord = null;
-    if (wordCounter >= nextRepeatAt && repeatPool.length > 0) {
-      selectedWord = repeatPool[Math.floor(Math.random() * repeatPool.length)];
-      setWordCounter(0);
-      setNextRepeatAt(Math.floor(Math.random() * 8) + 3);
-    } else {
-      selectedWord = untrainedPool.length > 0 ? untrainedPool[Math.floor(Math.random() * untrainedPool.length)] : null;
-      setWordCounter((prev) => prev + 1);
-    }
+    setCounters((prev) => ({
+      ...prev,
+      [feature]: {
+        wordCounter: 0,
+        nextRepeatAt: Math.floor(Math.random() * 8) + 3,
+      },
+    }));
 
-    if (!selectedWord && !untrainedPool.length && !repeatPool.length) {
-      setCurrentDeutsch(null);
-      setIsDataLoaded(true); // Korrigierte Großschreibung
-      return;
-    }
-
-    setCurrentDeutsch(selectedWord);
-  };
-
-  const selectNextWordPraep = () => {
-    let selectedWord = null;
-    if (wordCounterPraep >= nextRepeatAtPraep && repeatPoolPraep.length > 0) {
-      selectedWord = repeatPoolPraep[Math.floor(Math.random() * repeatPoolPraep.length)];
-      setWordCounterPraep(0);
-      setNextRepeatAtPraep(Math.floor(Math.random() * 8) + 3);
-    } else {
-      selectedWord = untrainedPoolPraep.length > 0 ? untrainedPoolPraep[Math.floor(Math.random() * untrainedPoolPraep.length)] : null;
-      setWordCounterPraep((prev) => prev + 1);
-    }
-
-    if (!selectedWord && !untrainedPoolPraep.length && !repeatPoolPraep.length) {
-      setCurrentPraeposition(null);
-      setIsDataLoaded(true); // Korrigierte Großschreibung
-      return;
-    }
-
-    setCurrentPraeposition(selectedWord);
-  };
-
-  const saveToServer = async (button, data) => {
-    if (!session) {
-      return null;
-    }
-
-    if (saveToServer.isExecuting) {
-      return null;
-    }
-    saveToServer.isExecuting = true;
-
-    try {
-      const url =
-        button === "REV"
-          ? `/api/standing?user=${encodeURIComponent(session.user.email)}&kategorie=deutsch`
-          : "/api/standing";
-      const method = button === "REV" ? "DELETE" : "POST";
-      const body =
-        button === "REV"
-          ? null
-          : JSON.stringify({
-              user: session.user.email,
-              exercise: data?.exercise,
-              standingId: data?.standingId,
-              correct: data?.correct,
-              attempts: data?.attempts,
-              kategorie: "deutsch",
-              button,
-            });
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body,
+    if (feature === "deutsch") {
+      setFilteredData({
+        deutsch: [],
       });
-
-      if (!response.ok) throw new Error(`Fehler beim Speichern (${button}): ${response.statusText}`);
-      return await response.json();
-    } catch (error) {
-      return null;
-    } finally {
-      saveToServer.isExecuting = false;
+      setSearchInput("");
+      setNewTypeOfWordFilter("");
+      setIsRootSearch(false);
+      setIsApplyingFilters(false);
     }
+
+    setIsDataLoaded(false);
   };
 
-  const saveToServerPraep = async (button, data) => {
+  // Unified function to reset pools to initial state
+  const resetPoolsToInitialState = (feature) => {
+    applyStandingToWords(feature, standingSummary[feature], data[feature]);
+  };
+
+  // Unified word selection
+  const selectNextWord = (feature) => {
+    const featurePools = pools[feature];
+    const featureCounters = counters[feature];
+
+    let selectedWord = null;
+
+    if (featureCounters.wordCounter >= featureCounters.nextRepeatAt && featurePools.repeat.length > 0) {
+      selectedWord = featurePools.repeat[Math.floor(Math.random() * featurePools.repeat.length)];
+      setCounters((prev) => ({
+        ...prev,
+        [feature]: {
+          ...prev[feature],
+          wordCounter: 0,
+          nextRepeatAt: Math.floor(Math.random() * 8) + 3,
+        },
+      }));
+    } else {
+      selectedWord =
+        featurePools.untrained.length > 0
+          ? featurePools.untrained[Math.floor(Math.random() * featurePools.untrained.length)]
+          : null;
+      setCounters((prev) => ({
+        ...prev,
+        [feature]: {
+          ...prev[feature],
+          wordCounter: prev[feature].wordCounter + 1,
+        },
+      }));
+    }
+
+    if (!selectedWord && !featurePools.untrained.length && !featurePools.repeat.length) {
+      setCurrentItem((prev) => ({
+        ...prev,
+        [feature]: null,
+      }));
+      setIsDataLoaded(true);
+      return;
+    }
+
+    setCurrentItem((prev) => ({
+      ...prev,
+      [feature]: selectedWord,
+    }));
+  };
+
+  // Unified save to server function
+  const saveToServer = async (feature, button, data) => {
     if (!session) return null;
 
-    if (saveToServerPraep.isExecuting) return null;
-    saveToServerPraep.isExecuting = true;
+    const saveFunction =
+      feature === "deutsch"
+        ? saveToServerDeutsch
+        : feature === "praeposition"
+        ? saveToServerPraep
+        : feature === "sprichwort"
+        ? saveToServerSprichwort
+        : feature === "redewendung"
+        ? saveToServerRedewendung
+        : saveToServerPraepverben; // Hinzugefügt
+    if (saveFunction.isExecuting) return null;
+    saveFunction.isExecuting = true;
 
     try {
       const url =
         button === "REV"
-          ? `/api/standing?user=${encodeURIComponent(session.user.email)}&kategorie=praeposition`
+          ? `/api/standing?user=${encodeURIComponent(session.user.email)}&kategorie=${feature}`
           : "/api/standing";
       const method = button === "REV" ? "DELETE" : "POST";
       const body =
@@ -475,7 +441,7 @@ export const AppProvider = ({ children }) => {
               standingId: data?.standingId,
               correct: data?.correct,
               attempts: data?.attempts,
-              kategorie: "praeposition",
+              kategorie: feature,
               button,
             });
 
@@ -488,17 +454,32 @@ export const AppProvider = ({ children }) => {
       if (!response.ok) throw new Error(`Fehler beim Speichern (${button}): ${response.statusText}`);
       return await response.json();
     } catch (error) {
+      console.error(`[saveToServer:${feature}] Fehler:`, error.message);
       return null;
     } finally {
-      saveToServerPraep.isExecuting = false;
+      saveFunction.isExecuting = false;
     }
   };
 
-  saveToServer.isExecuting = false;
+  // Separate execution flags for each save function
+  const saveToServerDeutsch = async (button, data) => saveToServer("deutsch", button, data);
+  const saveToServerPraep = async (button, data) => saveToServer("praeposition", button, data);
+  const saveToServerSprichwort = async (button, data) => saveToServer("sprichwort", button, data);
+  const saveToServerRedewendung = async (button, data) => saveToServer("redewendung", button, data);
+  const saveToServerPraepverben = async (button, data) => saveToServer("praepverben", button, data); // Hinzugefügt
 
+  saveToServerDeutsch.isExecuting = false;
+  saveToServerPraep.isExecuting = false;
+  saveToServerSprichwort.isExecuting = false;
+  saveToServerRedewendung.isExecuting = false;
+  saveToServerPraepverben.isExecuting = false; // Hinzugefügt
+
+  // Filter application (currently only for deutsch)
   const applyFilters = () => {
     setIsApplyingFilters(true);
     try {
+      console.log("Applying filters with:", { searchInput, newTypeOfWordFilter, isRootSearch, dataDeutsch: data.deutsch });
+
       const currentFilterState = { searchInput, newTypeOfWordFilter, isRootSearch };
 
       if (
@@ -511,116 +492,277 @@ export const AppProvider = ({ children }) => {
 
       setPrevFilterState(currentFilterState);
 
-      const learnedIds = standingSummary
+      const learnedIds = standingSummary.deutsch
         .filter((s) => s.correct === 2)
         .map((s) => s.exercise.toString());
-      const repeatIds = standingSummary
+      const repeatIds = standingSummary.deutsch
         .filter((s) => s.correct < 2)
         .map((s) => s.exercise.toString());
 
-      const untrainedWords = deutsch.filter(
-        (word) => !learnedIds.includes(word.id) && !repeatIds.includes(word.id)
-      );
-      const repeatWords = deutsch.filter((word) => repeatIds.includes(word.id));
-      const learnedWords = deutsch.filter((word) => learnedIds.includes(word.id));
-
-      setUntrainedPool(untrainedWords);
-      setRepeatPool(repeatWords);
-      setLearnedPool(learnedWords);
-
-      if (!searchInput && !newTypeOfWordFilter && !isRootSearch) {
-        const resetFiltered = [...untrainedWords, ...repeatWords];
-        setFilteredDeutsch(resetFiltered);
-
-        let selectedWord = null;
-        if (wordCounter >= nextRepeatAt && repeatWords.length > 0) {
-          selectedWord = repeatWords[Math.floor(Math.random() * repeatWords.length)];
-          setWordCounter(0);
-          setNextRepeatAt(Math.floor(Math.random() * 8) + 3);
-        } else {
-          selectedWord = untrainedWords.length > 0 ? untrainedWords[Math.floor(Math.random() * untrainedWords.length)] : null;
-          setWordCounter((prev) => prev + 1);
-        }
-        if (!selectedWord && !untrainedWords.length && !repeatWords.length) {
-          setCurrentDeutsch(null);
-        } else {
-          setCurrentDeutsch(selectedWord);
-        }
-        return;
-      }
-
-      let allWords = [...untrainedWords, ...repeatWords, ...learnedWords];
+      let allWords = [...data.deutsch];
 
       if (searchInput) {
+        const searchLower = searchInput.toLowerCase();
         const key = isRootSearch ? "Root" : "Word";
-        allWords = allWords.filter((word) => 
-          word[key]?.toLowerCase().includes(searchInput.toLowerCase())
+        allWords = allWords.filter((word) =>
+          word[key]?.toLowerCase().includes(searchLower)
         );
       }
 
       if (newTypeOfWordFilter) {
-        allWords = allWords.filter((word) => 
-          word.TypeOfWord.some((type) => type.TypeOfWord === newTypeOfWordFilter)
+        allWords = allWords.filter((word) =>
+          word.TypeOfWord?.some((type) => type.TypeOfWord === newTypeOfWordFilter)
         );
       }
 
-      const newUntrainedPool = allWords.filter(
-        (word) => !learnedIds.includes(word.id) && !repeatIds.includes(word.id)
+      const untrainedWords = allWords.filter(
+        (word) => !learnedIds.includes(word.id.toString()) && !repeatIds.includes(word.id.toString())
       );
-      const newRepeatPool = allWords.filter((word) => repeatIds.includes(word.id));
-      const newLearnedPool = allWords.filter((word) => learnedIds.includes(word.id));
+      const repeatWords = allWords.filter((word) => repeatIds.includes(word.id.toString()));
+      const learnedWords = allWords.filter((word) => learnedIds.includes(word.id.toString()));
 
-      setUntrainedPool(newUntrainedPool);
-      setRepeatPool(newRepeatPool);
-      setLearnedPool(newLearnedPool);
-      const newFilteredDeutsch = [...newUntrainedPool, ...newRepeatPool];
-      setFilteredDeutsch(newFilteredDeutsch);
+      setPools((prev) => ({
+        ...prev,
+        deutsch: {
+          untrained: untrainedWords,
+          repeat: repeatWords,
+          learned: learnedWords,
+        },
+      }));
+
+      const newFilteredDeutsch = [...untrainedWords, ...repeatWords];
+      setFilteredData({
+        deutsch: newFilteredDeutsch,
+      });
 
       let selectedWord = null;
-      if (wordCounter >= nextRepeatAt && newRepeatPool.length > 0) {
-        selectedWord = newRepeatPool[Math.floor(Math.random() * newRepeatPool.length)];
-        setWordCounter(0);
-        setNextRepeatAt(Math.floor(Math.random() * 8) + 3);
+      const featureCounters = counters.deutsch;
+      if (featureCounters.wordCounter >= featureCounters.nextRepeatAt && repeatWords.length > 0) {
+        selectedWord = repeatWords[Math.floor(Math.random() * repeatWords.length)];
+        setCounters((prev) => ({
+          ...prev,
+          deutsch: {
+            ...prev.deutsch,
+            wordCounter: 0,
+            nextRepeatAt: Math.floor(Math.random() * 8) + 3,
+          },
+        }));
       } else {
-        selectedWord = newUntrainedPool.length > 0 ? newUntrainedPool[Math.floor(Math.random() * newUntrainedPool.length)] : null;
-        setWordCounter((prev) => prev + 1);
+        selectedWord = untrainedWords.length > 0
+          ? untrainedWords[Math.floor(Math.random() * untrainedWords.length)]
+          : null;
+        setCounters((prev) => ({
+          ...prev,
+          deutsch: {
+            ...prev.deutsch,
+            wordCounter: prev.deutsch.wordCounter + 1,
+          },
+        }));
       }
-      if (!selectedWord && !newUntrainedPool.length && !newRepeatPool.length) {
-        setCurrentDeutsch(null);
+
+      if (!selectedWord && !untrainedWords.length && !repeatWords.length) {
+        setCurrentItem((prev) => ({
+          ...prev,
+          deutsch: null,
+        }));
       } else {
-        setCurrentDeutsch(selectedWord);
+        setCurrentItem((prev) => ({
+          ...prev,
+          deutsch: selectedWord,
+        }));
       }
     } catch (error) {
-      console.error("[applyFilters] Fehler:", error.message);
+      console.error("[applyFilters] Fehler:", error);
     } finally {
       setIsApplyingFilters(false);
     }
   };
 
+  // Unified function to handle word feedback
+  const handleWordFeedback = async (feature, isCorrect) => {
+    if (!currentItem[feature] || !session) return;
+
+    try {
+      const itemId = currentItem[feature].id;
+      const standingItem = standingSummary[feature].find(
+        (s) => s.exercise.toString() === itemId.toString()
+      );
+
+      const currentAttempts = standingItem ? standingItem.attempts + 1 : 1;
+      const currentCorrect = standingItem
+        ? isCorrect
+          ? Math.min(standingItem.correct + 1, 2)
+          : Math.max(standingItem.correct - 1, 0)
+        : isCorrect
+        ? 1
+        : 0;
+
+      const updatedStanding = {
+        exercise: itemId,
+        standingId: standingItem?.id,
+        correct: currentCorrect,
+        attempts: currentAttempts,
+      };
+
+      const updatedStandingSummary = [...standingSummary[feature]];
+      const existingIndex = updatedStandingSummary.findIndex(
+        (s) => s.exercise.toString() === itemId.toString()
+      );
+
+      if (existingIndex >= 0) {
+        updatedStandingSummary[existingIndex] = {
+          ...updatedStandingSummary[existingIndex],
+          correct: currentCorrect,
+          attempts: currentAttempts,
+        };
+      } else {
+        const newStandingItem = {
+          exercise: itemId,
+          correct: currentCorrect,
+          attempts: currentAttempts,
+          ...(feature === "deutsch"
+            ? {
+                Word: currentItem[feature].Word || "Unbekannt",
+                Artikel: currentItem[feature].Artikel || "",
+                Transl_F: currentItem[feature].Transl_F?.[0]?.Transl_F || "Keine Übersetzung",
+              }
+            : feature === "praeposition"
+            ? {
+                Satz: currentItem[feature].Satz || "Unbekannt",
+                Loesung: currentItem[feature].Loesung || "Keine Lösung",
+              }
+            : feature === "sprichwort"
+            ? {
+                Sprichwort: currentItem[feature].Sprichwort || "Unbekannt",
+                Erklaerung: currentItem[feature].Erklaerung || "Keine Erklärung",
+                Wort: currentItem[feature].Wort || "",
+                Beispiel: currentItem[feature].Beispiel || "",
+                Quelle: currentItem[feature].Quelle || "",
+                Datum: currentItem[feature].Datum || "",
+              }
+            : feature === "redewendung"
+            ? {
+                Redewendung: currentItem[feature].Redewendung || "Unbekannt",
+                Erklaerung: currentItem[feature].Erklaerung || "Keine Erklärung",
+                Wort: currentItem[feature].Wort || "",
+                Beispiel: currentItem[feature].Beispiel || "",
+                Quelle: currentItem[feature].Quelle || "",
+                Datum: currentItem[feature].Datum || "",
+              }
+            : {
+                Satz: currentItem[feature].Satz || "Unbekannt",
+                Verb: currentItem[feature].Verb || "Unbekannt",
+                Loesung: currentItem[feature].Loesung || "Keine Lösung",
+                Beispiele: currentItem[feature].Beispiele || "",
+                Erklaerung: currentItem[feature].Erklaerung || "Keine Erklärung",
+                quelle: currentItem[feature].quelle || "",
+                Datum: currentItem[feature].Datum || "",
+              }), // Hinzugefügt für praepverben
+        };
+        updatedStandingSummary.push(newStandingItem);
+      }
+
+      setStandingSummary((prev) => ({
+        ...prev,
+        [feature]: updatedStandingSummary,
+      }));
+
+      setAttempts((prev) => prev + 1);
+
+      const currentPools = { ...pools[feature] };
+      const currentItemId = currentItem[feature].id.toString();
+
+      currentPools.untrained = currentPools.untrained.filter(
+        (item) => item.id.toString() !== currentItemId
+      );
+      currentPools.repeat = currentPools.repeat.filter(
+        (item) => item.id.toString() !== currentItemId
+      );
+      currentPools.learned = currentPools.learned.filter(
+        (item) => item.id.toString() !== currentItemId
+      );
+
+      if (currentCorrect === 2) {
+        currentPools.learned.push(currentItem[feature]);
+        setTrainedCount((prev) => prev + 1);
+      } else {
+        currentPools.repeat.push(currentItem[feature]);
+      }
+
+      setPools((prev) => ({
+        ...prev,
+        [feature]: currentPools,
+      }));
+
+      setCurrentItem((prev) => ({
+        ...prev,
+        [feature]: null,
+      }));
+
+      await saveToServer(feature, "OK", updatedStanding);
+    } catch (error) {
+      console.error(`[handleWordFeedback:${feature}] Fehler:`, error);
+    }
+  };
+
+  // Unified function to reset learning progress
+  const resetLearningProgress = async (feature) => {
+    if (!session) return;
+
+    try {
+      const result = await saveToServer(feature, "REV", null);
+      if (result) {
+        console.log(`Server-Reset für ${feature} erfolgreich:`, result);
+        resetState(feature);
+        await loadInitialData(feature);
+      } else {
+        console.error(`Server-Reset für ${feature} fehlgeschlagen`);
+      }
+    } catch (error) {
+      console.error(`[resetLearningProgress:${feature}] Fehler:`, error);
+    }
+  };
+
+  // Feature-specific handler functions
+  const handleDeutschWordFeedback = (isCorrect) => handleWordFeedback("deutsch", isCorrect);
+  const handlePraepWordFeedback = (isCorrect) => handleWordFeedback("praeposition", isCorrect);
+  const handleSprichwortFeedback = (isCorrect) => handleWordFeedback("sprichwort", isCorrect);
+  const handleRedewendungFeedback = (isCorrect) => handleWordFeedback("redewendung", isCorrect);
+  const handlePraepverbenFeedback = (isCorrect) => handleWordFeedback("praepverben", isCorrect); // Hinzugefügt
+  const resetDeutschLearningProgress = () => resetLearningProgress("deutsch");
+  const resetPraepLearningProgress = () => resetLearningProgress("praeposition");
+  const resetSprichwortLearningProgress = () => resetLearningProgress("sprichwort");
+  const resetRedewendungLearningProgress = () => resetLearningProgress("redewendung");
+  const resetPraepverbenLearningProgress = () => resetLearningProgress("praepverben"); // Hinzugefügt
+
+  // Effect to apply filters when relevant state changes
+  useEffect(() => {
+    if (router.pathname === "/deutsch" && data.deutsch.length > 0) {
+      applyFilters();
+    }
+  }, [searchInput, newTypeOfWordFilter, isRootSearch, data.deutsch, standingSummary.deutsch]);
+
   return (
     <AppContext.Provider
       value={{
+        // Session and loading state
         session,
-        deutsch,
-        setDeutsch,
-        standingSummary,
-        setStandingSummary,
+        status,
         isDataLoaded,
-        setIsDataLoaded, // Korrigierte Großschreibung
-        currentDeutsch,
-        setCurrentDeutsch,
-        trainedCount,
+
+        // Common state
         attempts,
-        saveToServer,
-        applyFilters,
-        untrained: untrainedPool,
-        setUntrainedPool,
-        repeatPool,
-        setRepeatPool,
-        setTrainedCount,
-        setAttempts,
-        filteredDeutsch,
-        setFilteredDeutsch,
+        trainedCount,
+
+        // Feature-specific data
+        data,
+        filteredData,
+        standingSummary,
+        currentItem,
+        pools,
+        stats,
+
+        // Filter state (primarily for deutsch)
         searchInput,
         setSearchInput,
         newTypeOfWordFilter,
@@ -629,32 +771,25 @@ export const AppProvider = ({ children }) => {
         setIsRootSearch,
         isApplyingFilters,
         setIsApplyingFilters,
-        selectNextWord,
-        setLearnedPool,
+
+        // Feature-specific handlers
+        handleDeutschWordFeedback,
+        handlePraepWordFeedback,
+        handleSprichwortFeedback,
+        handleRedewendungFeedback,
+        handlePraepverbenFeedback, // Hinzugefügt
+        resetDeutschLearningProgress,
+        resetPraepLearningProgress,
+        resetSprichwortLearningProgress,
+        resetRedewendungLearningProgress,
+        resetPraepverbenLearningProgress, // Hinzugefügt
+
+        // Helper functions
+        getCurrentFeature,
         resetPoolsToInitialState,
-        // Präpositionen-Werte
-        praeposition,
-        setPraeposition,
-        standingSummaryPraep,
-        setStandingSummaryPraep,
-        currentPraeposition,
-        setCurrentPraeposition,
-        saveToServerPraep,
-        untrainedPraep: untrainedPoolPraep,
-        setUntrainedPoolPraep,
-        repeatPoolPraep,
-        setRepeatPoolPraep,
-        selectNextWordPraep,
-        setLearnedPoolPraep,
-        totalCountPraep: praepositionStats.totalCountPraep,
-        progressPraep: praepositionStats.progressPraep,
-        totalCount: deutschStats.totalCount,
-        progress: deutschStats.progress
       }}
     >
       {children}
     </AppContext.Provider>
   );
 };
-
-export default AppContext;

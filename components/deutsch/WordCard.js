@@ -1,10 +1,9 @@
 import { useState, useEffect, useContext, useRef } from "react";
 import { motion } from "framer-motion";
-import styles from "../../styles/WordCard.module.css";
 import { AppContext } from "../../pages/context/AppContext";
 
 export default function WordCard({ showTranslation, onFlip }) {
-  const { currentDeutsch } = useContext(AppContext);
+  const { currentItem } = useContext(AppContext);
   const [isVisible, setIsVisible] = useState(false);
   const [cardHeight, setCardHeight] = useState("auto");
   const frontCardRef = useRef(null);
@@ -17,7 +16,7 @@ export default function WordCard({ showTranslation, onFlip }) {
 
   // Effekt zur Berechnung der Kartenhöhe basierend auf dem Inhalt
   useEffect(() => {
-    if (currentDeutsch && frontCardRef.current && backCardRef.current) {
+    if (currentItem.deutsch && frontCardRef.current && backCardRef.current) {
       // Wir entfernen temporär die absolute Positionierung, um die natürliche Höhe zu messen
       frontCardRef.current.style.position = "static";
       backCardRef.current.style.position = "static";
@@ -36,9 +35,9 @@ export default function WordCard({ showTranslation, onFlip }) {
       const maxHeight = Math.max(frontHeight, backHeight, 440); // Mindesthöhe von 440px
       setCardHeight(`${maxHeight}px`);
     }
-  }, [currentDeutsch]);
+  }, [currentItem.deutsch]);
 
-  if (!currentDeutsch) {
+  if (!currentItem.deutsch) {
     return (
       <div className="w-full min-h-[440px] rounded-2xl bg-gray-200 animate-pulse flex items-center justify-center">
         <p className="text-gray-500">Lade Daten...</p>
@@ -46,8 +45,8 @@ export default function WordCard({ showTranslation, onFlip }) {
     );
   }
 
-  const formattedDate = currentDeutsch.DateEntryWord
-    ? new Date(currentDeutsch.DateEntryWord).toLocaleDateString("de-DE")
+  const formattedDate = currentItem.deutsch.DateEntryWord
+    ? new Date(currentItem.deutsch.DateEntryWord).toLocaleDateString("de-DE")
     : "Datum nicht verfügbar";
 
   return (
@@ -74,34 +73,37 @@ export default function WordCard({ showTranslation, onFlip }) {
           style={{ backfaceVisibility: "hidden" }}
         >
           <div>
-            <h2 className="text-3xl font-bold mb-6">{currentDeutsch.Word || "Unbekannt"}</h2>
-            {(currentDeutsch.Artikel || currentDeutsch.Prefix || currentDeutsch.Root) && (
-  <p className="inline-block px-3 py-1 mb-4 text-xl font-bold bg-white/20 rounded-full backdrop-blur-sm">
-    {currentDeutsch.Artikel || ""}{" "}
-    {currentDeutsch.Prefix && currentDeutsch.Root
-      ? `${currentDeutsch.Prefix}- ${currentDeutsch.Root}`
-      : `${currentDeutsch.Prefix || ""}${currentDeutsch.Root || ""}`}
-  </p>
-)}
-
-
-            {currentDeutsch.Definition && (
-              <p className="text-white/70">Struktur: {currentDeutsch.Definition}</p>
+            <h2 className="text-3xl font-bold mb-6">{currentItem.deutsch.Word || "Unbekannt"}</h2>
+            {(currentItem.deutsch.Artikel || currentItem.deutsch.Prefix || currentItem.deutsch.Root) && (
+              <p className="inline-block px-3 py-1 mb-4 text-xl font-bold bg-white/20 rounded-full backdrop-blur-sm">
+                {currentItem.deutsch.Artikel || ""}{" "}
+                {currentItem.deutsch.Prefix && currentItem.deutsch.Root
+                  ? `${currentItem.deutsch.Prefix}- ${currentItem.deutsch.Root}`
+                  : `${currentItem.deutsch.Prefix || ""}${currentItem.deutsch.Root || ""}`}
+              </p>
             )}
-            {currentDeutsch.TypeOfWord?.length > 0 && (
-              <p className="text-white/70">Wortart: {currentDeutsch.TypeOfWord.map((t) => t.TypeOfWord).join(", ")}</p>
+
+            {currentItem.deutsch.Definition && (
+              <p className="text-white/70">Struktur: {currentItem.deutsch.Definition}</p>
             )}
-            {currentDeutsch.Root && (
-              <p className="text-white/70">Stamm: {currentDeutsch.Root}</p>
+            {currentItem.deutsch.TypeOfWord?.length > 0 && (
+              <p className="text-white/70">
+                Wortart: {currentItem.deutsch.TypeOfWord.map((t) => t.TypeOfWord).join(", ")}
+              </p>
+            )}
+            {currentItem.deutsch.Root && (
+              <p className="text-white/70">Stamm: {currentItem.deutsch.Root}</p>
             )}
             <div className="mt-6 pt-4 border-t border-white/10">
               <h4 className="text-lg font-semibold text-white mb-2">Beispiel</h4>
               <div className="space-y-4">
-                {Array.isArray(currentDeutsch.Article) && currentDeutsch.Article.length > 0 ? (
-                  currentDeutsch.Article.map((example, index) => (
+                {Array.isArray(currentItem.deutsch.Article) && currentItem.deutsch.Article.length > 0 ? (
+                  currentItem.deutsch.Article.map((example, index) => (
                     <div key={index} className="space-y-2 leading-relaxed bg-white/20 p-2 rounded-md">
-                      <p className="text-white ">{example.Sentence_D || "Kein Satz verfügbar"}</p>
-                      <p className="text-sm text-white/60">Quelle: {example.Source || "Keine Quelle verfügbar"}</p>
+                      <p className="text-white">{example.Sentence_D || "Kein Satz verfügbar"}</p>
+                      <p className="text-sm text-white/60">
+                        Quelle: {example.Source || "Keine Quelle verfügbar"}
+                      </p>
                     </div>
                   ))
                 ) : (
@@ -123,7 +125,7 @@ export default function WordCard({ showTranslation, onFlip }) {
         >
           <div>
             <p className="text-white leading-relaxed text-3xl font-bold text-center">
-              {currentDeutsch.Transl_F?.map((t) => t.Transl_F).join("; ") || "Keine Übersetzung"}
+              {currentItem.deutsch.Transl_F?.map((t) => t.Transl_F).join("; ") || "Keine Übersetzung"}
             </p>
           </div>
         </div>

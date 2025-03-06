@@ -1,5 +1,4 @@
-import { useContext, useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import { useContext, useState } from "react";
 import { debounce } from "lodash";
 import Head from "next/head";
 import Header from "../components/deutsch/Header";
@@ -15,40 +14,28 @@ import { Button, Dialog, DialogHeader, DialogBody, DialogFooter } from "@materia
 export default function Deutsch() {
   const {
     session,
-    deutsch,
-    totalCount,
-    progress,
-    setDeutsch,
-    setLearnedPool,
-    standingSummary,
-    setStandingSummary,
+    status,
     isDataLoaded,
-    currentDeutsch,
-    setCurrentDeutsch,
-    trainedCount,
+    data,
+    currentItem,
+    pools,
+    stats,
+    standingSummary,
     attempts,
-    saveToServer,
-    applyFilters,
-    untrained,
-    setUntrainedPool,
-    repeatPool,
-    setRepeatPool,
-    setTrainedCount,
-    setAttempts,
-    filteredDeutsch,
-    setFilteredDeutsch,
+    trainedCount,
+    filteredData,
     searchInput,
     setSearchInput,
     newTypeOfWordFilter,
     setNewTypeOfWordFilter,
+    setIsApplyingFilters,
     isRootSearch,
     setIsRootSearch,
     isApplyingFilters,
-    setIsApplyingFilters,
-    selectNextWord,
+    handleDeutschWordFeedback,
+    resetDeutschLearningProgress,
   } = useContext(AppContext);
 
-  const router = useRouter();
   const [showTranslation, setShowTranslation] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -58,141 +45,27 @@ export default function Deutsch() {
     if (!isApplyingFilters) callback();
   }, 1000);
 
-  useEffect(() => {
-    if (isDataLoaded && !isApplyingFilters) {
-    }
-  }, [searchInput, newTypeOfWordFilter, isRootSearch, isDataLoaded, applyFilters]);
-
   const handleOK = async () => {
-    if (!currentDeutsch || isApplyingFilters) return;
+    if (!currentItem.deutsch || isApplyingFilters) return;
     setIsApplyingFilters(true);
-    let hasSelectedNextWord = false;
-  
     try {
-      const exercise = currentDeutsch.id;
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-  
-      const standingResponse = await fetch(
-        `/api/standing?user=${encodeURIComponent(session.user.email)}&exercise=${encodeURIComponent(exercise)}&kategorie=deutsch`
-      );
-      if (!standingResponse.ok) {
-        throw new Error("Fehler beim Abrufen des Standing");
-      }
-      const standing = await standingResponse.json();
-  
-      const correct = standing && Object.keys(standing).length > 0 ? Math.min((standing.correct || 0) + 1, 2) : 1;
-  
-      const serverResponse = await saveToServer("OK", {
-        exercise,
-        standingId: standing?.id,
-        correct,
-        attempts: newAttempts,
-        kategorie: "deutsch",
-      });
-  
-      if (serverResponse) {
-        setStandingSummary((prev) => {
-          const existing = prev.find((s) => s.exercise === exercise);
-          if (existing) {
-            return prev.map((s) =>
-              s.exercise === exercise ? { ...s, correct, attempts: newAttempts } : s
-            );
-          }
-          return [
-            ...prev,
-            {
-              exercise,
-              correct,
-              attempts: newAttempts,
-              Word: currentDeutsch.Word,
-              Artikel: currentDeutsch.Artikel,
-              Transl_F: currentDeutsch.Transl_F[0]?.Transl_F,
-            },
-          ];
-        });
-      }
-  
-      const updatedUntrained = untrained.filter((word) => word.id !== exercise);
-      const updatedRepeatPool = correct < 2 ? [...repeatPool, currentDeutsch] : repeatPool;
-      setUntrainedPool(updatedUntrained);
-      setRepeatPool(updatedRepeatPool);
-      if (correct === 2) setTrainedCount((prev) => prev + 1);
-      setFilteredDeutsch((prev) => prev.filter((word) => word.id !== exercise));
-  
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      selectNextWord();
-      hasSelectedNextWord = true;
+      await handleDeutschWordFeedback(true);
     } catch (error) {
       setErrorMessage("Fehler beim Speichern von OK. Fortfahren lokal...");
       setTimeout(() => setErrorMessage(""), 5000);
-  
-      const exercise = currentDeutsch.id;
-      const newAttempts = attempts + 1;
-      const correct = 1;
-      const updatedUntrained = untrained.filter((word) => word.id !== exercise);
-      const updatedRepeatPool = correct < 2 ? [...repeatPool, currentDeutsch] : repeatPool;
-      setUntrainedPool(updatedUntrained);
-      setRepeatPool(updatedRepeatPool);
-      if (correct === 2) setTrainedCount((prev) => prev + 1);
-      setFilteredDeutsch((prev) => prev.filter((word) => word.id !== exercise));
-  
-      if (!hasSelectedNextWord) {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        selectNextWord();
-      }
     } finally {
       setIsApplyingFilters(false);
     }
   };
 
   const handleNOK = async () => {
-    if (!currentDeutsch || isApplyingFilters) return;
+    if (!currentItem.deutsch || isApplyingFilters) return;
     setIsApplyingFilters(true);
     try {
-      const exercise = currentDeutsch.id;
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-
-      const standingResponse = await fetch(
-        `/api/standing?user=${encodeURIComponent(session.user.email)}&exercise=${encodeURIComponent(exercise)}&kategorie=deutsch`
-      );
-      const standing = await standingResponse.json();
-
-      const serverResponse = await saveToServer("NOK", {
-        exercise,
-        standingId: standing?.id,
-        correct: 0,
-        attempts: newAttempts,
-      });
-
-      if (serverResponse) {
-        setStandingSummary((prev) => {
-          const existing = prev.find((s) => s.exercise === exercise);
-          if (existing) {
-            return prev.map((s) =>
-              s.exercise === exercise ? { ...s, correct: 0, attempts: newAttempts } : s
-            );
-          }
-          return [...prev, { exercise, correct: 0, attempts: newAttempts, Word: currentDeutsch.Word, Artikel: currentDeutsch.Artikel, Transl_F: currentDeutsch.Transl_F[0]?.Transl_F }];
-        });
-      }
-
-      setUntrainedPool((prev) => [...prev, currentDeutsch]);
-      setRepeatPool((prev) => prev.filter((word) => word.id !== exercise));
-      setFilteredDeutsch((prev) => prev.filter((word) => word.id !== exercise));
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      selectNextWord();
+      await handleDeutschWordFeedback(false);
     } catch (error) {
       setErrorMessage("Fehler beim Speichern von NOK. Fortfahren lokal...");
       setTimeout(() => setErrorMessage(""), 5000);
-
-      const exercise = currentDeutsch.id;
-      const newAttempts = attempts + 1;
-      setUntrainedPool((prev) => [...prev, currentDeutsch]);
-      setRepeatPool((prev) => prev.filter((word) => word.id !== exercise));
-      setFilteredDeutsch((prev) => prev.filter((word) => word.id !== exercise));
-      selectNextWord();
     } finally {
       setIsApplyingFilters(false);
     }
@@ -202,16 +75,7 @@ export default function Deutsch() {
     if (!session || isApplyingFilters) return;
     setIsApplyingFilters(true);
     try {
-      await saveToServer("REV");
-      setUntrainedPool(deutsch);
-      setRepeatPool([]);
-      setTrainedCount(0);
-      setAttempts(0);
-      setFilteredDeutsch([]);
-      setCurrentDeutsch(null);
-      setStandingSummary([]);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      selectNextWord();
+      await resetDeutschLearningProgress();
     } catch (error) {
       setErrorMessage("Fehler beim Zurücksetzen des Spielstands.");
       setTimeout(() => setErrorMessage(""), 5000);
@@ -221,12 +85,12 @@ export default function Deutsch() {
   };
 
   const updateSuggestions = (inputValue) => {
-    if (!deutsch || deutsch.length === 0) {
+    if (!data.deutsch || data.deutsch.length === 0) {
       setSuggestions([]);
       return;
     }
     const key = isRootSearch ? "Root" : "Word";
-    const duplicatesCount = deutsch.reduce((countMap, item) => {
+    const duplicatesCount = data.deutsch.reduce((countMap, item) => {
       const value = item?.[key];
       if (value && value.toLowerCase().includes(inputValue.toLowerCase())) {
         countMap[value] = (countMap[value] || 0) + 1;
@@ -254,22 +118,21 @@ export default function Deutsch() {
     setSearchInput(cleanedSuggestion);
     updateSuggestions(cleanedSuggestion);
   };
-  
+
   const handleFocus = () => {
     if (searchInput) updateSuggestions(searchInput);
   };
-  
+
   const handleBlur = () => {
     setTimeout(() => setSuggestions([]), 200);
   };
-  
+
   const handleFilterClick = () => {
     if (!isApplyingFilters) {
-      applyFilters();
-      setOpenFilter(!openFilter);
+      setOpenFilter(false);
     }
   };
-  
+
   const handleRemoveFilter = () => {
     if (!isApplyingFilters) {
       setSearchInput("");
@@ -280,30 +143,10 @@ export default function Deutsch() {
       document.querySelectorAll('input[type="radio"]').forEach((input) => (input.checked = false));
       const rootSearchFilter = document.getElementById("RootSearchFilter");
       if (rootSearchFilter) rootSearchFilter.checked = false;
-  
-      const learnedIds = standingSummary
-        .filter((s) => s.correct === 2)
-        .map((s) => s.exercise.toString());
-      const repeatIds = standingSummary
-        .filter((s) => s.correct < 2)
-        .map((s) => s.exercise.toString());
-  
-      const untrainedWords = deutsch.filter(
-        (word) => !learnedIds.includes(word.id) && !repeatIds.includes(word.id)
-      );
-      const repeatWords = deutsch.filter((word) => repeatIds.includes(word.id));
-      const learnedWords = deutsch.filter((word) => learnedIds.includes(word.id));
-  
-      setUntrainedPool(untrainedWords);
-      setRepeatPool(repeatWords);
-      setLearnedPool(learnedWords);
-      setFilteredDeutsch([...untrainedWords, ...repeatWords]);
-      selectNextWord();
-  
-      setOpenFilter(!openFilter);
+      setOpenFilter(false);
     }
   };
-  
+
   const handleRootSearchToggle = (e) => {
     const isChecked = e.target.checked;
     setIsRootSearch(isChecked);
@@ -316,7 +159,6 @@ export default function Deutsch() {
   if (!session) return <LoadingScreen message="Authentifizierung läuft..." />;
   if (!isDataLoaded) return <LoadingScreen message="Lade Spielstand..." />;
 
-  console.log("Deutsch: currentDeutsch", deutsch)
   return (
     <>
       <Head>
@@ -346,18 +188,18 @@ export default function Deutsch() {
         className="max-w-5xl mx-auto py-2 px-4 sm:px-6 lg:px-8"
         style={{ minHeight: "800px", display: "flex", flexDirection: "column", gap: "1rem" }}
       >
-        {currentDeutsch ? (
+        {currentItem.deutsch ? (
           <WordCard
             wordData={{
-              article: currentDeutsch.Artikel,
-              word: currentDeutsch.Word,
-              prefix: currentDeutsch.Prefix,
-              root: currentDeutsch.Root,
-              structure: currentDeutsch.Structure,
-              typeOfWord: currentDeutsch.TypeOfWord.map((t) => t.TypeOfWord),
-              additionalInfo: currentDeutsch.Root,
-              translation: currentDeutsch.Transl_F.map((t) => t.Transl_F).join("; "),
-              examples: currentDeutsch.Article.map((a) => ({
+              article: currentItem.deutsch.Artikel,
+              word: currentItem.deutsch.Word,
+              prefix: currentItem.deutsch.Prefix,
+              root: currentItem.deutsch.Root,
+              structure: currentItem.deutsch.Structure,
+              typeOfWord: currentItem.deutsch.TypeOfWord.map((t) => t.TypeOfWord),
+              additionalInfo: currentItem.deutsch.Root,
+              translation: currentItem.deutsch.Transl_F.map((t) => t.Transl_F).join("; "),
+              examples: currentItem.deutsch.Article.map((a) => ({
                 sentence: a.Sentence_D,
                 source: `${a.Source}${
                   a.TitleOfArticle
@@ -365,7 +207,7 @@ export default function Deutsch() {
                     : ""
                 }`,
               })),
-              dateEntryWord: currentDeutsch.DateEntryWord,
+              dateEntryWord: currentItem.deutsch.DateEntryWord,
             }}
             showTranslation={showTranslation}
             onFlip={() => setShowTranslation(!showTranslation)}
@@ -375,7 +217,7 @@ export default function Deutsch() {
             Keine Wörter verfügbar. Alle Wörter wurden gelernt! Setze den Fortschritt zurück, um fortzufahren.
           </div>
         )}
-        {currentDeutsch && (
+        {currentItem.deutsch && (
           <>
             <div className="mt-4" style={{ minHeight: "100px" }}>
               <ActionButtons
@@ -385,11 +227,16 @@ export default function Deutsch() {
               />
             </div>
             <div className="mt-4" style={{ minHeight: "50px" }}>
-              <Stats totalCount={totalCount} trainedCount={trainedCount} attempts={attempts} progress={progress} />
+              <Stats
+                totalCount={stats.deutsch.totalCount}
+                trainedCount={trainedCount}
+                attempts={attempts}
+                progress={stats.deutsch.progress}
+              />
             </div>
           </>
         )}
-        {standingSummary && standingSummary.length > 0 ? (
+        {standingSummary.deutsch && standingSummary.deutsch.length > 0 ? (
           <table className="table-auto border-collapse border border-gray-300 mt-4 w-full bg-white">
             <thead>
               <tr className="bg-gray-100">
@@ -399,7 +246,7 @@ export default function Deutsch() {
               </tr>
             </thead>
             <tbody>
-              {standingSummary.map((item, index) => (
+              {standingSummary.deutsch.map((item, index) => (
                 <tr key={item.exercise || index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                   <td className="border border-gray-300 p-2">{item.Word || "Unbekannt"}</td>
                   <td className="border border-gray-300 p-2">{item.Artikel || ""}</td>
