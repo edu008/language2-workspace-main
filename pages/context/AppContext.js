@@ -1,5 +1,5 @@
 // AppContext.js
-import { createContext, useState, useEffect, useMemo } from "react";
+import { createContext, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 
@@ -8,6 +8,9 @@ export const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const router = useRouter();
   const { data: session, status } = useSession();
+
+  // Timer-Referenz für die Lernzeit pro Sitzung
+  const sessionStartTimeRef = useRef(null);
 
   // Unified state for all features
   const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -31,14 +34,14 @@ export const AppProvider = ({ children }) => {
     praeposition: [],
     sprichwort: [],
     redewendung: [],
-    praepverben: [], // Hinzugefügt
+    praepverben: [],
   });
 
   const [filteredData, setFilteredData] = useState({
     deutsch: [],
     sprichwort: [],
     redewendung: [],
-    praepverben: [], // Hinzugefügt, falls Filter später benötigt
+    praepverben: [],
   });
 
   const [standingSummary, setStandingSummary] = useState({
@@ -46,7 +49,7 @@ export const AppProvider = ({ children }) => {
     praeposition: [],
     sprichwort: [],
     redewendung: [],
-    praepverben: [], // Hinzugefügt
+    praepverben: [],
   });
 
   const [currentItem, setCurrentItem] = useState({
@@ -54,7 +57,7 @@ export const AppProvider = ({ children }) => {
     praeposition: null,
     sprichwort: null,
     redewendung: null,
-    praepverben: null, // Hinzugefügt
+    praepverben: null,
   });
 
   const [pools, setPools] = useState({
@@ -62,7 +65,7 @@ export const AppProvider = ({ children }) => {
     praeposition: { untrained: [], repeat: [], learned: [] },
     sprichwort: { untrained: [], repeat: [], learned: [] },
     redewendung: { untrained: [], repeat: [], learned: [] },
-    praepverben: { untrained: [], repeat: [], learned: [] }, // Hinzugefügt
+    praepverben: { untrained: [], repeat: [], learned: [] },
   });
 
   const [counters, setCounters] = useState({
@@ -70,7 +73,7 @@ export const AppProvider = ({ children }) => {
     praeposition: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 },
     sprichwort: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 },
     redewendung: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 },
-    praepverben: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 }, // Hinzugefügt
+    praepverben: { wordCounter: 0, nextRepeatAt: Math.floor(Math.random() * 8) + 3 },
   });
 
   // Computed stats for all features
@@ -94,7 +97,7 @@ export const AppProvider = ({ children }) => {
       },
       praepverben: {
         totalCount: data.praepverben.length,
-        progress: data.praepverben.length > 0 ? Math.round((trainedCount / data.praepverben.length) * 100) || 0 : 0, // Hinzugefügt
+        progress: data.praepverben.length > 0 ? Math.round((trainedCount / data.praepverben.length) * 100) || 0 : 0,
       },
     };
   }, [data, trainedCount]);
@@ -117,6 +120,8 @@ export const AppProvider = ({ children }) => {
       (pools[currentFeature].untrained.length > 0 || pools[currentFeature].repeat.length > 0)
     ) {
       selectNextWord(currentFeature);
+      // Starte den Timer, wenn eine neue Übung beginnt
+      sessionStartTimeRef.current = Date.now();
     }
   }, [isDataLoaded, pools, currentItem, router.pathname]);
 
@@ -126,7 +131,7 @@ export const AppProvider = ({ children }) => {
     if (router.pathname === "/praeposition") return "praeposition";
     if (router.pathname === "/sprichwort") return "sprichwort";
     if (router.pathname === "/redewendung") return "redewendung";
-    if (router.pathname === "/praepverben") return "praepverben"; // Hinzugefügt
+    if (router.pathname === "/praepverben") return "praepverben";
     return null;
   };
 
@@ -204,6 +209,7 @@ export const AppProvider = ({ children }) => {
             exercise: item.exercise || item.id,
             correct: item.correct || 0,
             attempts: item.attempts || 0,
+            duration: item.duration || 0,
             ...(feature === "deutsch"
               ? { Word: "Unbekannt", Artikel: "", Transl_F: "Keine Übersetzung" }
               : feature === "praeposition"
@@ -212,7 +218,7 @@ export const AppProvider = ({ children }) => {
               ? { Sprichwort: "Unbekannt", Erklaerung: "Keine Erklärung" }
               : feature === "redewendung"
               ? { Redewendung: "Unbekannt", Erklaerung: "Keine Erklärung" }
-              : { Satz: "Unbekannt", Verb: "Unbekannt", Loesung: "Keine Lösung" }), // Hinzugefügt für praepverben
+              : { Satz: "Unbekannt", Verb: "Unbekannt", Loesung: "Keine Lösung" }),
           };
         }
 
@@ -220,6 +226,7 @@ export const AppProvider = ({ children }) => {
           exercise: item.exercise || item.id,
           correct: item.correct || 0,
           attempts: item.attempts || 0,
+          duration: item.duration || 0,
           ...(feature === "deutsch"
             ? {
                 Word: foundItem.Word || "Unbekannt",
@@ -257,7 +264,7 @@ export const AppProvider = ({ children }) => {
                 Erklaerung: foundItem.Erklaerung || "Keine Erklärung",
                 quelle: foundItem.quelle || "",
                 Datum: foundItem.Datum || "",
-              }), // Hinzugefügt für praepverben
+              }),
         };
       });
 
@@ -413,18 +420,10 @@ export const AppProvider = ({ children }) => {
   const saveToServer = async (feature, button, data) => {
     if (!session) return null;
 
-    const saveFunction =
-      feature === "deutsch"
-        ? saveToServerDeutsch
-        : feature === "praeposition"
-        ? saveToServerPraep
-        : feature === "sprichwort"
-        ? saveToServerSprichwort
-        : feature === "redewendung"
-        ? saveToServerRedewendung
-        : saveToServerPraepverben; // Hinzugefügt
-    if (saveFunction.isExecuting) return null;
-    saveFunction.isExecuting = true;
+    // Berechne die Dauer der Sitzung (in Sekunden)
+    const duration = sessionStartTimeRef.current
+      ? Math.floor((Date.now() - sessionStartTimeRef.current) / 1000)
+      : 0;
 
     try {
       const url =
@@ -443,6 +442,7 @@ export const AppProvider = ({ children }) => {
               attempts: data?.attempts,
               kategorie: feature,
               button,
+              duration: duration, // Lernzeit in Sekunden
             });
 
       const response = await fetch(url, {
@@ -456,8 +456,6 @@ export const AppProvider = ({ children }) => {
     } catch (error) {
       console.error(`[saveToServer:${feature}] Fehler:`, error.message);
       return null;
-    } finally {
-      saveFunction.isExecuting = false;
     }
   };
 
@@ -466,19 +464,24 @@ export const AppProvider = ({ children }) => {
   const saveToServerPraep = async (button, data) => saveToServer("praeposition", button, data);
   const saveToServerSprichwort = async (button, data) => saveToServer("sprichwort", button, data);
   const saveToServerRedewendung = async (button, data) => saveToServer("redewendung", button, data);
-  const saveToServerPraepverben = async (button, data) => saveToServer("praepverben", button, data); // Hinzugefügt
+  const saveToServerPraepverben = async (button, data) => saveToServer("praepverben", button, data);
 
   saveToServerDeutsch.isExecuting = false;
   saveToServerPraep.isExecuting = false;
   saveToServerSprichwort.isExecuting = false;
   saveToServerRedewendung.isExecuting = false;
-  saveToServerPraepverben.isExecuting = false; // Hinzugefügt
+  saveToServerPraepverben.isExecuting = false;
 
   // Filter application (currently only for deutsch)
   const applyFilters = () => {
     setIsApplyingFilters(true);
     try {
-      console.log("Applying filters with:", { searchInput, newTypeOfWordFilter, isRootSearch, dataDeutsch: data.deutsch });
+      console.log("Applying filters with:", {
+        searchInput,
+        newTypeOfWordFilter,
+        isRootSearch,
+        dataDeutsch: data.deutsch,
+      });
 
       const currentFilterState = { searchInput, newTypeOfWordFilter, isRootSearch };
 
@@ -504,9 +507,7 @@ export const AppProvider = ({ children }) => {
       if (searchInput) {
         const searchLower = searchInput.toLowerCase();
         const key = isRootSearch ? "Root" : "Word";
-        allWords = allWords.filter((word) =>
-          word[key]?.toLowerCase().includes(searchLower)
-        );
+        allWords = allWords.filter((word) => word[key]?.toLowerCase().includes(searchLower));
       }
 
       if (newTypeOfWordFilter) {
@@ -548,9 +549,10 @@ export const AppProvider = ({ children }) => {
           },
         }));
       } else {
-        selectedWord = untrainedWords.length > 0
-          ? untrainedWords[Math.floor(Math.random() * untrainedWords.length)]
-          : null;
+        selectedWord =
+          untrainedWords.length > 0
+            ? untrainedWords[Math.floor(Math.random() * untrainedWords.length)]
+            : null;
         setCounters((prev) => ({
           ...prev,
           deutsch: {
@@ -597,11 +599,17 @@ export const AppProvider = ({ children }) => {
         ? 1
         : 0;
 
+      // Berechne die Dauer der Sitzung (in Sekunden)
+      const duration = sessionStartTimeRef.current
+        ? Math.floor((Date.now() - sessionStartTimeRef.current) / 1000)
+        : 0;
+
       const updatedStanding = {
         exercise: itemId,
         standingId: standingItem?.id,
         correct: currentCorrect,
         attempts: currentAttempts,
+        duration: duration, // Lernzeit in Sekunden
       };
 
       const updatedStandingSummary = [...standingSummary[feature]];
@@ -614,12 +622,14 @@ export const AppProvider = ({ children }) => {
           ...updatedStandingSummary[existingIndex],
           correct: currentCorrect,
           attempts: currentAttempts,
+          duration: (updatedStandingSummary[existingIndex].duration || 0) + duration, // Akkumuliere die Dauer (in Sekunden)
         };
       } else {
         const newStandingItem = {
           exercise: itemId,
           correct: currentCorrect,
           attempts: currentAttempts,
+          duration: duration,
           ...(feature === "deutsch"
             ? {
                 Word: currentItem[feature].Word || "Unbekannt",
@@ -657,7 +667,7 @@ export const AppProvider = ({ children }) => {
                 Erklaerung: currentItem[feature].Erklaerung || "Keine Erklärung",
                 quelle: currentItem[feature].quelle || "",
                 Datum: currentItem[feature].Datum || "",
-              }), // Hinzugefügt für praepverben
+              }),
         };
         updatedStandingSummary.push(newStandingItem);
       }
@@ -699,7 +709,9 @@ export const AppProvider = ({ children }) => {
         [feature]: null,
       }));
 
-      await saveToServer(feature, "OK", updatedStanding);
+      await saveToServer(feature, isCorrect ? "OK" : "NOK", updatedStanding);
+      // Starte den Timer für die nächste Übung neu
+      sessionStartTimeRef.current = Date.now();
     } catch (error) {
       console.error(`[handleWordFeedback:${feature}] Fehler:`, error);
     }
@@ -728,12 +740,12 @@ export const AppProvider = ({ children }) => {
   const handlePraepWordFeedback = (isCorrect) => handleWordFeedback("praeposition", isCorrect);
   const handleSprichwortFeedback = (isCorrect) => handleWordFeedback("sprichwort", isCorrect);
   const handleRedewendungFeedback = (isCorrect) => handleWordFeedback("redewendung", isCorrect);
-  const handlePraepverbenFeedback = (isCorrect) => handleWordFeedback("praepverben", isCorrect); // Hinzugefügt
+  const handlePraepverbenFeedback = (isCorrect) => handleWordFeedback("praepverben", isCorrect);
   const resetDeutschLearningProgress = () => resetLearningProgress("deutsch");
   const resetPraepLearningProgress = () => resetLearningProgress("praeposition");
   const resetSprichwortLearningProgress = () => resetLearningProgress("sprichwort");
   const resetRedewendungLearningProgress = () => resetLearningProgress("redewendung");
-  const resetPraepverbenLearningProgress = () => resetLearningProgress("praepverben"); // Hinzugefügt
+  const resetPraepverbenLearningProgress = () => resetLearningProgress("praepverben");
 
   // Effect to apply filters when relevant state changes
   useEffect(() => {
@@ -777,12 +789,12 @@ export const AppProvider = ({ children }) => {
         handlePraepWordFeedback,
         handleSprichwortFeedback,
         handleRedewendungFeedback,
-        handlePraepverbenFeedback, // Hinzugefügt
+        handlePraepverbenFeedback,
         resetDeutschLearningProgress,
         resetPraepLearningProgress,
         resetSprichwortLearningProgress,
         resetRedewendungLearningProgress,
-        resetPraepverbenLearningProgress, // Hinzugefügt
+        resetPraepverbenLearningProgress,
 
         // Helper functions
         getCurrentFeature,

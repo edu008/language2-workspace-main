@@ -2,7 +2,7 @@
 import { useContext, useState } from "react";
 import { debounce } from "lodash";
 import Head from "next/head";
-import Header from "../components/deutsch/Header";
+import Header from "../components/layout/Header";
 import SprichwortCard from "../components/deutsch/WordCardSprichwort";
 import ActionButtons from "../components/deutsch/ActionButtons";
 import Stats from "../components/deutsch/Stats";

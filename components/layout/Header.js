@@ -14,7 +14,7 @@ export default function Header({ session }) {
     setIsNavigating(true);
     
     // Special case for enterdeutsch page - redirect to Worterfassung
-    if (router.pathname === '/enterdeutsch' || router.pathname === '/enterpraeposition' || router.pathname === '/enterpraepverben' || router.pathname === '/enterredewendung' || router.pathname === '/entersprichwort') {
+    if (router.pathname === '/enterdeutsch' || router.pathname === '/enterpraeposition' || router.pathname === '/enterpraepverben' || router.pathname === '/enterredewendung' || router.pathname === '/entersprichwort' || router.pathname === '/statistics' ) {
       router.push('/Worterfassung').then(() => {
         // Reset navigating state after navigation completes
         setIsNavigating(false);
@@ -28,7 +28,7 @@ export default function Header({ session }) {
   };
 
   const pageTitles = {
-    '/deutsch': 'Wortbedeutungen',
+    '/deutsch': 'Vokabeln',
     '/': 'Deutsch Lernen',
     '/Worterfassung': 'Worterfassung',
     '/praeposition': 'Präpositionen',
@@ -40,6 +40,7 @@ export default function Header({ session }) {
     '/entersprichwort': 'Bearbeitung Sprichwörter',
     '/enterredewendung': 'Bearbeitung Redewendung',
     '/enterpraepverben': 'Bearbeitung Präpositionen & Verben',
+    '/statistics': 'Statistik',
 
   };
 

@@ -18,7 +18,7 @@ function AuthWrapper({ Component, pageProps }) {
   const router = useRouter();
   const { isDataLoaded } = useContext(AppContext);
 
-  const publicRoutes = ['/', '/Worterfassung', '/enterdeutsch', '/enterpraeposition', '/enterpraepverben', '/enterredewendung', '/entersprichwort'];
+  const publicRoutes = ['/', '/Worterfassung', '/enterdeutsch', '/enterpraeposition', '/enterpraepverben', '/enterredewendung', '/entersprichwort','/statistics'];
 
   useEffect(() => {
     if (!loading) {

@@ -67,7 +67,7 @@ export const getStandingSums = async (user, kategorie) => {
 };
 
 // CREATE
-export const createStandingOK = async (user, exercise, correct, attempts, kategorie = "deutsch") => {
+export const createStandingOK = async (user, exercise, correct, attempts, kategorie = "deutsch", duration = 0) => {
   try {
     if (!user || !exercise) {
       throw new Error("User und Exercise sind erforderlich");
@@ -78,7 +78,6 @@ export const createStandingOK = async (user, exercise, correct, attempts, katego
       throw new Error("Ungültiger Wert für correct: Muss eine ganze Zahl zwischen 0 und 2 sein.");
     }
 
-    // Prüfe, ob ein Standing bereits existiert, um doppelte Erstellungen zu vermeiden
     const existingStanding = await prisma.standing.findFirst({
       where: {
         user,
@@ -87,7 +86,7 @@ export const createStandingOK = async (user, exercise, correct, attempts, katego
     });
     if (existingStanding) {
       console.warn("Standing existiert bereits, aktualisiere es stattdessen:", existingStanding);
-      return await updateStandingOK(existingStanding.id, validatedCorrect, attempts ?? 1, kategorie);
+      return await updateStandingOK(existingStanding.id, validatedCorrect, attempts ?? 1, kategorie, duration);
     }
 
     const standing = await prisma.standing.create({
@@ -97,9 +96,10 @@ export const createStandingOK = async (user, exercise, correct, attempts, katego
         kategorie,
         correct: validatedCorrect,
         attempts: attempts ?? 1,
+        duration: duration, // Neue Spalte
       },
     });
-    console.log("Created Standing OK with correct:", validatedCorrect, "kategorie:", kategorie);
+    console.log("Created Standing OK with correct:", validatedCorrect, "kategorie:", kategorie, "duration:", duration);
     return standing;
   } catch (error) {
     console.error("Fehler beim Erstellen eines OK-Standings:", error);
@@ -107,7 +107,7 @@ export const createStandingOK = async (user, exercise, correct, attempts, katego
   }
 };
 
-export const createStandingNOK = async (user, exercise, correct, attempts, kategorie = "deutsch") => {
+export const createStandingNOK = async (user, exercise, correct, attempts, kategorie = "deutsch", duration = 0) => {
   try {
     if (!user || !exercise) {
       throw new Error("User und Exercise sind erforderlich");
@@ -118,7 +118,6 @@ export const createStandingNOK = async (user, exercise, correct, attempts, kateg
       throw new Error("Ungültiger Wert für correct: Muss eine ganze Zahl zwischen 0 und 2 sein.");
     }
 
-    // Prüfe, ob ein Standing bereits existiert, um doppelte Erstellungen zu vermeiden
     const existingStanding = await prisma.standing.findFirst({
       where: {
         user,
@@ -127,7 +126,7 @@ export const createStandingNOK = async (user, exercise, correct, attempts, kateg
     });
     if (existingStanding) {
       console.warn("Standing existiert bereits, aktualisiere es stattdessen:", existingStanding);
-      return await updateStandingNOK(existingStanding.id, validatedCorrect, attempts ?? 1, kategorie);
+      return await updateStandingNOK(existingStanding.id, validatedCorrect, attempts ?? 1, kategorie, duration);
     }
 
     const standing = await prisma.standing.create({
@@ -137,9 +136,10 @@ export const createStandingNOK = async (user, exercise, correct, attempts, kateg
         kategorie,
         correct: validatedCorrect,
         attempts: attempts ?? 1,
+        duration: duration, // Neue Spalte
       },
     });
-    console.log("Created Standing NOK with correct:", validatedCorrect, "kategorie:", kategorie);
+    console.log("Created Standing NOK with correct:", validatedCorrect, "kategorie:", kategorie, "duration:", duration);
     return standing;
   } catch (error) {
     console.error("Fehler beim Erstellen eines NOK-Standings:", error);
@@ -148,7 +148,7 @@ export const createStandingNOK = async (user, exercise, correct, attempts, kateg
 };
 
 // UPDATE
-export const updateStandingOK = async (standingId, correct, attempts, kategorie = "deutsch") => {
+export const updateStandingOK = async (standingId, correct, attempts, kategorie = "deutsch", duration = 0) => {
   try {
     if (!standingId) {
       throw new Error("StandingId ist erforderlich");
@@ -175,9 +175,10 @@ export const updateStandingOK = async (standingId, correct, attempts, kategorie 
         correct: validatedCorrect,
         attempts: attempts ?? (existingStanding.attempts + 1),
         kategorie: kategorie,
+        duration: duration || existingStanding.duration || 0, // Aktualisiere oder behalte bestehenden Wert
       },
     });
-    console.log("Updated Standing OK with correct:", validatedCorrect, "kategorie:", kategorie);
+    console.log("Updated Standing OK with correct:", validatedCorrect, "kategorie:", kategorie, "duration:", duration);
     return standing;
   } catch (error) {
     console.error("Fehler beim Aktualisieren eines OK-Standings:", error);
@@ -185,7 +186,7 @@ export const updateStandingOK = async (standingId, correct, attempts, kategorie 
   }
 };
 
-export const updateStandingNOK = async (standingId, correct, attempts, kategorie = "deutsch") => {
+export const updateStandingNOK = async (standingId, correct, attempts, kategorie = "deutsch", duration = 0) => {
   try {
     if (!standingId) {
       throw new Error("StandingId ist erforderlich");
@@ -211,9 +212,10 @@ export const updateStandingNOK = async (standingId, correct, attempts, kategorie
         correct: validatedCorrect,
         attempts: attempts ?? (existingStanding.attempts + 1),
         kategorie: kategorie,
+        duration: duration || existingStanding.duration || 0, // Aktualisiere oder behalte bestehenden Wert
       },
     });
-    console.log("Updated Standing NOK with correct:", validatedCorrect, "kategorie:", kategorie);
+    console.log("Updated Standing NOK with correct:", validatedCorrect, "kategorie:", kategorie, "duration:", duration);
     return standing;
   } catch (error) {
     console.error("Fehler beim Aktualisieren eines NOK-Standings:", error);

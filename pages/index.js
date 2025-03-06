@@ -1,17 +1,14 @@
 import { useSession, signIn } from "next-auth/react";
 import React from "react";
 import Head from "next/head";
-import { useRouter } from "next/router";
-import Link from "next/link";
 import { 
   BookOpen, 
   MessageSquare, 
   GraduationCap, 
   CheckCircle,
-  ArrowDown,
-  Quote 
 } from "lucide-react";
-import Header from "../components/deutsch/Header";
+import Header from "../components/layout/Header";
+import ExerciseWorterfassungSwitch from "../components/layout/ExerciseWorterfassungSwitch"; // Neue Komponente importieren
 
 // Feature Card Component
 const FeatureCard = ({ icon, title, description }) => {
@@ -29,11 +26,7 @@ const LoginButton = ({ variant = "main", className = "" }) => {
   return (
     <button
       onClick={() => signIn()}
-      className={`${
-        variant === "main"
-          ? "bg-blue-600 hover:bg-blue-700 text-white"
-          : "bg-white hover:bg-gray-100 text-blue-600 border border-blue-600"
-      } font-medium rounded-lg px-6 py-3 text-lg transition-colors ${className}`}
+      className={`${variant === "main" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-white hover:bg-gray-100 text-blue-600 border border-blue-600"} font-medium rounded-lg px-6 py-3 text-lg transition-colors ${className}`}
     >
       Jetzt anmelden
     </button>
@@ -41,69 +34,29 @@ const LoginButton = ({ variant = "main", className = "" }) => {
 };
 
 export default function Home() {
-  const { data: session, status } = useSession(); // Status hinzugefügt
-  const router = useRouter();
+  const { data: session, status } = useSession();
 
-  // Features data
+  // Features data (für nicht angemeldete Nutzer)
   const features = [
     {
       icon: <BookOpen className="h-8 w-8 text-blue-600" />,
       title: "Umfangreiche Übungen",
-      description: "Über 500 interaktive Übungen für alle Sprachniveaus von A1 bis C2."
+      description: "Über 500 interaktive Übungen für alle Sprachniveaus von A1 bis C2.",
     },
     {
       icon: <MessageSquare className="h-8 w-8 text-blue-600" />,
-      title: "Konversations- praxis",
-      description: "Verbessere deine Sprechfähigkeiten mit KI-gestützten Dialogübungen."
+      title: "Konversationspraxis",
+      description: "Verbessere deine Sprechfähigkeiten mit KI-gestützten Dialogübungen.",
     },
     {
       icon: <GraduationCap className="h-8 w-8 text-blue-600" />,
-      title: "Zertifikats- vorbereitung",
-      description: "Gezielte Vorbereitung auf offizielle Deutschprüfungen wie Goethe oder TestDaF."
+      title: "Zertifikatsvorbereitung",
+      description: "Gezielte Vorbereitung auf offizielle Deutschprüfungen wie Goethe oder TestDaF.",
     },
     {
       icon: <CheckCircle className="h-8 w-8 text-blue-600" />,
       title: "Persönlicher Fortschritt",
-      description: "Verfolge deinen Lernfortschritt und erhalte maßgeschneiderte Empfehlungen."
-    }
-  ];
-
-  // Exercises data (for logged-in users)
-  const exercises = [
-    {
-      title: "Wortbedeutungen",
-      description: "Lernen Sie die Bedeutung deutscher Wörter",
-      icon: <BookOpen className="h-8 w-8 text-primary" />,
-      chip: "Vokabeln",
-      link: "/deutsch",
-    },
-    {
-      title: "Präpositionen",
-      description: "Üben Sie den korrekten Gebrauch von Präpositionen",
-      icon: <BookOpen className="h-8 w-8 text-primary" />,
-      chip: "Grammatik",
-      link: "/praeposition",
-    },
-    {
-      title: "Sprichwörter",
-      description: "Entdecken Sie deutsche Sprichwörter",
-      icon: <Quote className="h-8 w-8 text-primary" />,
-      chip: "Kultur",
-      link: "/sprichwort",
-    },
-    {
-      title: "Redewendungen",
-      description: "Lernen Sie gebräuchliche Redewendungen",
-      icon: <MessageSquare className="h-8 w-8 text-primary" />,
-      chip: "Idiome",
-      link: "/redewendung",
-    },
-    {
-      title: "Präpositionen & Verben",
-      description: "Üben Sie Präpositionen mit den passenden Verben",
-      icon: <BookOpen className="h-8 w-8 text-primary" />,
-      chip: "Grammatik",
-      link: "/praepverben",
+      description: "Verfolge deinen Lernfortschritt und erhalte maßgeschneiderte Empfehlungen.",
     },
   ];
 
@@ -117,7 +70,7 @@ export default function Home() {
   }
 
   if (session && session.user) {
-    // Logged-in view (keep the existing exercise cards)
+    // Angemeldete Ansicht mit der neuen Komponente
     return (
       <div className="min-h-screen bg-background">
         <Head>
@@ -126,48 +79,14 @@ export default function Home() {
 
         <Header session={session} />
 
-        <main className="container mx-auto px-4 py-8 mt-20">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">Übungen</h2>
-            <p className="mt-2 text-muted-foreground">
-              Wählen Sie eine Übung aus, um Ihr Deutsch zu verbessern
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {exercises.map((exercise, index) => (
-              <button
-                key={index}
-                onClick={() => router.push(exercise.link)}
-                className="exercise-card group text-left bg-card border border-border rounded-xl shadow-md p-6"
-              >
-                <div className="exercise-chip flex items-center justify-center">
-                  {exercise.chip}
-                </div>
-                <div className="mb-4 flex justify-center">{exercise.icon}</div>
-                <h3 className="exercise-title text-center">{exercise.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground text-center">
-                  {exercise.description}
-                </p>
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-12 text-center">
-            <Link
-              href="/Worterfassung"
-              className="inline-flex flex-col items-center gap-2 text-primary hover:text-primary/80 transition-colors"
-            >
-              <span className="text-lg font-medium">Worterfassung</span>
-              <ArrowDown className="h-6 w-6 animate-bounce text-primary" />
-            </Link>
-          </div>
+        <main className="mt-20">
+          <ExerciseWorterfassungSwitch session={session} />
         </main>
       </div>
     );
   }
 
-  // Not logged in view (new landing page design)
+  // Nicht angemeldete Ansicht (bleibt unverändert)
   return (
     <div className="min-h-screen flex flex-col bg-white animate-fade-in">
       <Head>

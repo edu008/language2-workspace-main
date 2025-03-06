@@ -1,4 +1,3 @@
-/** @type {import('tailwindcss').Config} */
 const withMT = require("@material-tailwind/react/utils/withMT");
 
 module.exports = withMT({
@@ -18,6 +17,7 @@ module.exports = withMT({
     "sm:grid-cols-1",
     "sm:grid-cols-2",
     "lg:grid-cols-3",
+    "lg:grid-cols-4",
   ],
   prefix: "",
   theme: {
@@ -122,32 +122,44 @@ module.exports = withMT({
           gray: "#F2F2F7",
           text: "#1D1D1F",
         },
-        // Hinzugefügte wg-Farbpalette aus der zweiten Konfiguration
         wg: {
           blue: {
-            50: '#f0f7ff',
-            100: '#e0f1ff',
-            200: '#c0e3ff',
-            300: '#8fcdff',
-            400: '#5aacff',
-            500: '#3183ff',
-            600: '#1a65ff',
-            700: '#0f4aec',
-            800: '#0f3cbb',
-            900: '#123494',
+            50: "#f0f7ff",
+            100: "#e0f1ff",
+            200: "#c0e3ff",
+            300: "#8fcdff",
+            400: "#5aacff",
+            500: "#3183ff",
+            600: "#1a65ff",
+            700: "#0f4aec",
+            800: "#0f3cbb",
+            900: "#123494",
           },
           neutral: {
-            50: '#f8f9fa',
-            100: '#f1f3f5',
-            200: '#e9ecef',
-            300: '#dee2e6',
-            400: '#ced4da',
-            500: '#adb5bd',
-            600: '#868e96',
-            700: '#495057',
-            800: '#343a40',
-            900: '#212529',
+            50: "#f8f9fa",
+            100: "#f1f3f5",
+            200: "#e9ecef",
+            300: "#dee2e6",
+            400: "#ced4da",
+            500: "#adb5bd",
+            600: "#868e96",
+            700: "#495057",
+            800: "#343a40",
+            900: "#212529",
           },
+        },
+        germanic: {
+          50: "#f7f7f9",
+          100: "#e9eaf2",
+          200: "#d4d6e5",
+          300: "#b3b7d0",
+          400: "#8c91b6",
+          500: "#6e739e",
+          600: "#585c82",
+          700: "#484b6a",
+          800: "#3e4159",
+          900: "#363849",
+          950: "#25262f",
         },
       },
       borderRadius: {
@@ -207,7 +219,6 @@ module.exports = withMT({
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
-        // Hinzugefügte Animationen aus der zweiten Konfiguration
         "float-in": {
           "0%": { transform: "translateY(10px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
@@ -215,6 +226,22 @@ module.exports = withMT({
         "scale-in": {
           "0%": { transform: "scale(0.95)", opacity: "0" },
           "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "fade-in-up": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.8" },
+        },
+        "fade-up": { // Neue Animation für Fade von unten nach oben
+          "0%": { opacity: "0", transform: "translateY(50px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
       animation: {
@@ -229,9 +256,12 @@ module.exports = withMT({
         "float": "float 3s ease-in-out infinite",
         "wave": "wave 2s ease-in-out infinite",
         "spin-slow": "spin-slow 3s linear infinite",
-        // Hinzugefügte Animationen aus der zweiten Konfiguration
         "float-in": "float-in 0.5s ease-out",
         "scale-in": "scale-in 0.3s ease-out",
+        "fade-in-up": "fade-in-up 0.6s ease-out",
+        "slide-in": "slide-in 0.6s ease-out",
+        "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "fade-up": "fade-up 0.5s ease-out forwards", // Neue Animation hinzugefügt
       },
     },
   },

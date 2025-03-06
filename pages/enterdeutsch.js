@@ -15,7 +15,7 @@ import CheckboxGroup from '@/components/WordGarden/CheckboxGroup';
 import SuggestionList from '@/components/WordGarden/SuggestionList';
 import DynamicFieldArray from '@/components/WordGarden/DynamicFieldArray';
 import MessageToast from '@/components/WordGarden/MessageToast';
-import Header from '@/components/deutsch/Header';
+import Header from '@/components/layout/Header';
 
 export async function getServerSideProps(context) {
     const session = await getSession(context);

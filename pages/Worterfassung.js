@@ -8,9 +8,10 @@ import {
   BookOpen,
   Quote,
   MessageSquare,
+  BarChart,
 } from "lucide-react"; // Importiere nur die Icons, die für die Karten benötigt werden, passend zu index.js
 import { useRouter } from "next/router"; // Für Navigation im Header
-import Header from "../components/deutsch/Header"; // Importiere die Header-Komponente aus components/deutsch/Header.js, wie in index.js
+import Header from "../components/layout/Header"; // Importiere die Header-Komponente aus components/deutsch/Header.js, wie in index.js
 
 // Einfache Utility-Funktion für Klassen
 const cn = (...classes) => classes.filter(Boolean).join(" ");
@@ -68,6 +69,13 @@ export default function Worterfassung() {
       chip: "Grammatik",
       link: "/enterpraepverben",
     },
+        {
+          title: "Statistiken",
+          description: "Sieh dir deine Statistiken an",
+          icon: <BarChart className="h-8 w-8 text-primary" />,
+          chip: "Stats",
+          link: "/statistics",
+        },
   ];
 
   if (session && session.user) {

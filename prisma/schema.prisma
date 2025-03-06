@@ -112,18 +112,21 @@ model standings {
 model standing {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   user      String
-  exercise  String   @db.ObjectId // Die Wort-ID
+  exercise  String   @db.ObjectId
   kategorie String
-  correct   Int      // 0: nicht korrekt, 1: einmal korrekt, 2: gelernt
-  attempts  Int      // Anzahl der Versuche
+  correct   Int
+  attempts  Int
+  duration  Int?
+  updatedAt DateTime @updatedAt
+  userData  users    @relation(fields: [user], references: [email]) // Beziehung definieren
   @@unique([user, exercise, kategorie])
 }
 
 model users {
-  id            String @id @default(auto()) @map("_id") @db.ObjectId
-  email         String
-  /// Could not determine type: the field only had null or empty values in the sample set.
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  email         String    @unique
   emailVerified Json?
-  image         String
-  name          String
+  image         String?
+  name          String?
+  standings     standing[]
 }

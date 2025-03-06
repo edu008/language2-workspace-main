@@ -12,7 +12,7 @@ import TextField from '@/components/WordGarden/TextField';
 import Button from '@/components/WordGarden/Button';
 import SuggestionList from '@/components/WordGarden/SuggestionList';
 import MessageToast from '@/components/WordGarden/MessageToast';
-import Header from '@/components/deutsch/Header';
+import Header from '@/components/layout/Header';
 
 export async function getServerSideProps(context) {
     const session = await getSession(context);

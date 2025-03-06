@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         if (body.button === "OK") {
           const standing = await getStanding(body.user, body.exercise);
           if (standing) {
-            await updateStandingOK(standing.id, body.correct, body.attempts, kategorie);
+            await updateStandingOK(standing.id, body.correct, body.attempts, kategorie, body.duration || 0);
             res.status(200).json({ message: "OK Standing updated", standingId: standing.id });
           } else {
             const newStanding = await createStandingOK(
@@ -55,14 +55,15 @@ export default async function handler(req, res) {
               body.exercise,
               body.correct ?? 1,
               body.attempts ?? 1,
-              kategorie
+              kategorie,
+              body.duration || 0 // Standardwert 0, falls nicht angegeben
             );
             res.status(200).json({ message: "OK Standing created", standingId: newStanding.id });
           }
         } else if (body.button === "NOK") {
           const standing = await getStanding(body.user, body.exercise);
           if (standing) {
-            await updateStandingNOK(standing.id, body.correct ?? 0, body.attempts, kategorie);
+            await updateStandingNOK(standing.id, body.correct ?? 0, body.attempts, kategorie, body.duration || 0);
             res.status(200).json({ message: "NOK Standing updated", standingId: standing.id });
           } else {
             const newStanding = await createStandingNOK(
@@ -70,7 +71,8 @@ export default async function handler(req, res) {
               body.exercise,
               body.correct ?? 0,
               body.attempts ?? 1,
-              kategorie
+              kategorie,
+              body.duration || 0 // Standardwert 0, falls nicht angegeben
             );
             res.status(200).json({ message: "NOK Standing created", standingId: newStanding.id });
           }
