@@ -7,9 +7,10 @@ const SuggestionList = ({
   onSelect,
   onCancel,
   className,
+  displayField = "Word", // Standardwert ist "Word", kann überschrieben werden
   maxHeight = "max-h-80"
 }) => {
-  if (suggestions.length === 0) return null;
+  if (!suggestions || suggestions.length === 0) return null;
 
   return (
     <div className="absolute z-30 w-full mt-1 animate-float-in">
@@ -35,7 +36,7 @@ const SuggestionList = ({
             onClick={() => onSelect(item)}
             className="cursor-pointer m-1 px-3 py-2 border border-wg-neutral-200 rounded-lg bg-wg-neutral-50 hover:bg-wg-blue-50 hover:border-wg-blue-200 transition-colors duration-200"
           >
-            {item.Word}
+            {item[displayField] || 'Kein Wert'} {/* Dynamisches Feld verwenden */}
           </div>
         ))}
       </div>

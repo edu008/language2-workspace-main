@@ -1,287 +1,385 @@
-import { getPraepverbenCount } from "../prisma/praepverben";
-import { getPraepverben } from "../prisma/praepverben";
-import { useSession, signIn, signOut } from "next-auth/react"
-import Link from 'next/link';
-import Image from 'next/image'
-import { useState } from "react"
-import { getSession } from 'next-auth/react'
-import { useRouter } from 'next/router'
-import Message from "./Message";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { getSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { getPraepverben } from "../prisma/praepverben";
+
+// Modern UI components
+import { X, Send, Save, Search } from 'lucide-react';
+import FormField from '@/components/WordGarden/FormField';
+import TextField from '@/components/WordGarden/TextField';
+import Button from '@/components/WordGarden/Button';
+import SuggestionList from '@/components/WordGarden/SuggestionList';
+import MessageToast from '@/components/WordGarden/MessageToast';
+import Header from '@/components/deutsch/Header';
 
 export async function getServerSideProps(context) {
-  const session = await getSession(context)
-  if (session) {
-    const praepverben = await getPraepverben();
-
-    const kategorie = 'praepverben'
-
-    const res = await fetch(`http://localhost:3000/api/standing?user=${encodeURIComponent(session.user.email)}&kategorie=${encodeURIComponent(kategorie)}`);
-    const standingSums = await res.json();
-
-    standingSums.trainedSum = standingSums.trainedSum ? standingSums.trainedSum : 0;
-    standingSums.alltimeSum = standingSums.alltimeSum ? standingSums.alltimeSum : 0;
-
-    const praepverbenCount = await getPraepverbenCount();
-
-    const res2 = await fetch(`http://localhost:3000/api/standing?user=${encodeURIComponent(session.user.email)}`);
-    const finished = await res2.json();
-
-    const filteredPraepverben = praepverben.filter((praepverbenObj) => {
-      return !finished.some((finishedObj) => {
-        return finishedObj.exercise === praepverbenObj.id;
-      });
-    });
-
-    const summary = standingSums.summary.map((standing) => {
-      const matchingPraepverben = praepverben.find((praepverbenObj) => {
-        return standing.exercise === praepverbenObj.id;
-      });
-
-      if (matchingPraepverben) {
-        const date = new Date(matchingPraepverben.Datum);
-        const formattedDate = date.toLocaleDateString();
-        matchingPraepverben.Datum = formattedDate;
-
+    const session = await getSession(context);
+    
+    if (!session) {
         return {
-          summary: matchingPraepverben
+            redirect: {
+                destination: "/",
+                permanent: false,
+            },
         };
-      } else {
-        return {
-          summary: null
-        };
-      }
-    });
-
-    if (filteredPraepverben.length === 0) {
-      return {
-        redirect: {
-          destination: "/successPraepverben",
-          permanent: false,
-        },
-      };
-    } else {
-      const randomIndex = Math.floor(Math.random() * filteredPraepverben.length);
-      const randomPraepverben = filteredPraepverben[randomIndex];
-
-      const date = new Date(randomPraepverben.Datum);
-      const formattedDate = date.toLocaleDateString();
-      randomPraepverben.Datum = formattedDate
-      return {
-        props: {
-          praepverbenCount,
-          praepverben: randomPraepverben,
-          standingSums,
-          summary
-        }
-      }
     }
-  } else {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
-  }
+    
+    try {
+        const praepverbenRaw = await getPraepverben() || [];
+        const formattedPraepverben = praepverbenRaw.map(item => ({
+            ...item,
+            Datum: item.Datum instanceof Date ? item.Datum.toISOString() : item.Datum
+        }));
+        return {
+            props: {
+                praepverben: formattedPraepverben
+            }
+        };
+    } catch (error) {
+        console.error('Error in getServerSideProps:', error);
+        return {
+            props: {
+                praepverben: [],
+                error: 'Failed to load data'
+            }
+        };
+    }
 }
 
-export default function Praepverben() {
+export default function Praepverben({ praepverben }) {
+    const { data: session } = useSession();
+    const router = useRouter();
+    
+    // Form state
+    const [id, setId] = useState("");
+    const [newSatz, setNewSatz] = useState("");
+    const [newVerb, setNewVerb] = useState("");
+    const [newErklaerung, setNewErklaerung] = useState("");
+    const [newBeispiele, setNewBeispiele] = useState("");
+    const [newLoesung, setNewLoesung] = useState("");
+    const [newQuelle, setNewQuelle] = useState("");
+    const [newDatum, setNewDatum] = useState("");
+    
+    // UI state
+    const [message, setMessage] = useState("");
+    const [messageType, setMessageType] = useState("success");
+    const [suggestions, setSuggestions] = useState([]);
+    const [searchInput, setSearchInput] = useState("");
 
-  const { data: session } = useSession()
-  const router = useRouter();
-  const [newErklaerung, setNewErklaerung] = useState("");
-  const [newBeispiel, setNewBeispiel] = useState("");
-  const [newSatz, setNewSatz] = useState("");
-  const [newVerb, setNewVerb] = useState("");
-  const [newLoesung, setNewLoesung] = useState("");
-  const [message, setMessage] = useState("");
-  const [newQuelle, setNewQuelle] = useState("");
-
-  if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', (event) => {
-      if (!event.persisted) {
-        if (session) {
-          const standingIN = session.user.email;
-          const button = "trained";
-          fetch('/api/standing', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ standingIN, button })
-          })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error(error));
+    // Update suggestions with guard clause
+    const updateSuggestions = (inputValue) => {
+        if (!Array.isArray(praepverben)) {
+            setSuggestions([]);
+            return;
         }
-      }
-    });
-  }
+        const filteredResults = praepverben.filter((item) =>
+            item?.Satz?.toLowerCase().includes(inputValue.toLowerCase())
+        );
+        setSuggestions(filteredResults);
+    };
 
-  const refreshPage = () => {
-    router.replace(router.asPath, undefined, { scroll: false });
-  };
+    const refreshPage = () => {
+        router.replace(router.asPath, undefined, { scroll: false });
+    };
 
+    // Reset form fields
+    const resetForm = () => {
+        setId('');
+        setNewSatz('');
+        setNewVerb('');
+        setNewErklaerung('');
+        setNewBeispiele('');
+        setNewLoesung('');
+        setNewQuelle('');
+        setNewDatum('');
+        setSearchInput('');
+        setSuggestions([]);
+    };
 
-
-  const addPraepverben = async () => {
-    if (newSatz === null || newSatz === '' || newVerb === null || newVerb === '' || newErklaerung === null || newErklaerung === '' || newBeispiel === null || newBeispiel === '' || newLoesung === null || newLoesung === '' || newQuelle === null || newQuelle === '') {
-      setMessage("Fülle bitte alle Felder aus!");
-      setTimeout(() => {
-        setMessage("");
-      }, 10000);
-    } else {
-
-      await fetch('/api/praepverben', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          satz: newSatz,
-          verb: newVerb,
-          beispiel: newErklaerung,
-          erklaerung: newBeispiel,
-          loesung: newLoesung,
-          quelle: newQuelle
-        })
-      })
-        .then(res => res.json())
-      resetForm();
-      setMessage("Erfolgreich hinzugefügt!");
-      setTimeout(() => {
-        setMessage("");
-      }, 10000);
-      refreshPage()
-    }
-  }
-
-  const resetForm = () => {
-    setNewQuelle('');
-    setNewSatz('');
-    setNewVerb('');
-    setNewBeispiel('');
-    setNewErklaerung('');
-    setNewLoesung('');
-  }
-
-  if (session) {
-    return <>
-      <Head>
-        <title>Präpositionen & Verben</title>
-      </Head>
-      <div className="flex justify-between items-center bg-gray-100 p-4">
-        <Link href="/Worterfassung" className="py-2 px-4 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold text-xm"><FontAwesomeIcon icon={faArrowLeft} className="mr-2 fa-lg fa-fw" />Worterfassung</Link>
-        <div className="flex items-center">
-          <Image
-            src={session.user.image}
-            alt={session.user.name}
-            width={40}
-            height={40}
-            className="rounded-full mr-4"
-          />
-          <p className="text-gray-700 mr-4">{session.user.email}</p>
-          <button className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-2 px-4 rounded-full" onClick={() => signOut()}>Abmelden</button>
-        </div>
-      </div>
-      <div className="max-w-5xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
-        <h1 className="text-5xl font-bold text-center mb-8">Präpositionen & Verben</h1>
+    // Set form with data from selected item
+    const setForm = (item) => {
+        if (!item) return;
         
-        <form className="my-4">
-          <h1 className="text-2xl font-bold mb-4">Neu erfassen</h1>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="satz" className="block text_md font-medium text-gray-700">
-                Satz:
-              </label>
-              <input
-                id="satz"
-                type="text"
-                onChange={(e) => setNewSatz(e.target.value)}
-                value={newSatz}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="verb" className="block text_md font-medium text-gray-700">
-                Verb:
-              </label>
-              <input
-                id="verb"
-                type="text"
-                onChange={(e) => setNewVerb(e.target.value)}
-                value={newVerb}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="erklaerung" className="block text_md font-medium text-gray-700">
-                Erklärung:
-              </label>
-              <input
-                id="erklaerung"
-                type="text"
-                onChange={(e) => setNewErklaerung(e.target.value)}
-                value={newErklaerung}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="beispiel" className="block text_md font-medium text-gray-700">
-                Beispiele:
-              </label>
-              <input
-                id="beispiel"
-                type="text"
-                onChange={(e) => setNewBeispiel(e.target.value)}
-                value={newBeispiel}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="loesung" className="block text_md font-medium text-gray-700">
-                Lösung:
-              </label>
-              <input
-                id="loesung"
-                type="text"
-                onChange={(e) => setNewLoesung(e.target.value)}
-                value={newLoesung}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="quelle" className="block text_md font-medium text-gray-700">
-                Quelle:
-              </label>
-              <input
-                id="quelle"
-                type="text"
-                onChange={(e) => setNewQuelle(e.target.value)}
-                value={newQuelle}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-          </div>
-          {message && <Message message={message} />}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              addPraepverben();
-            }}
-            className="mt-4 w-full px-4 py-2 rounded text-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <FontAwesomeIcon icon={faPaperPlane} className="mr-2 fa-lg fa-fw" />
-          </button>
-        </form>
-      </div>
-    </>
-  }
+        setId(item.id || '');
+        setNewSatz(item.Satz || '');
+        setNewVerb(item.Verb || '');
+        setNewErklaerung(item.Erklaerung || '');
+        setNewBeispiele(item.Beispiele || '');
+        setNewLoesung(item.Loesung || '');
+        setNewQuelle(item.quelle || '');
+        setNewDatum(item.Datum ? new Date(item.Datum).toISOString().split('T')[0] : '');
+    };
+
+    // Handle search focus
+    const handleSearchFocus = () => {
+        if (Array.isArray(praepverben)) {
+            setSuggestions(praepverben);
+        }
+    };
+
+    // Handle search blur
+    const handleSearchBlur = () => {
+        setTimeout(() => {
+            setSuggestions([]);
+        }, 200);
+    };
+
+    // Handle suggestion selection
+    const handleSuggestionSelect = (item) => {
+        setForm(item);
+        setSearchInput(item.Satz);
+        setSuggestions([]);
+    };
+
+    // Validate form before submission
+    const validateForm = () => {
+        const errors = [];
+        if (!newSatz.trim()) errors.push('Satz ist erforderlich');
+        if (!newVerb.trim()) errors.push('Verb ist erforderlich');
+        if (!newErklaerung.trim()) errors.push('Erklärung ist erforderlich');
+        if (!newBeispiele.trim()) errors.push('Beispiele sind erforderlich');
+        if (!newLoesung.trim()) errors.push('Lösung ist erforderlich');
+        if (!newQuelle.trim()) errors.push('Quelle ist erforderlich');
+        if (!newDatum) errors.push('Datum ist erforderlich');
+        
+        if (errors.length > 0) {
+            setMessage(errors.join('. '));
+            setMessageType('error');
+            setTimeout(() => {
+                setMessage('');
+            }, 10000);
+            return false;
+        }
+        return true;
+    };
+
+    // Add new praepverben
+    const addPraepverben = async () => {
+        if (!validateForm()) return;
+
+        try {
+            const response = await fetch('/api/praepverben', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Satz: newSatz,
+                    Verb: newVerb,
+                    Erklaerung: newErklaerung,
+                    Beispiele: newBeispiele,
+                    Loesung: newLoesung,
+                    quelle: newQuelle,
+                    Datum: newDatum
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Fehler beim Speichern');
+            }
+
+            const data = await response.json();
+            resetForm();
+            setMessage("Präposition mit Verb erfolgreich hinzugefügt!");
+            setMessageType("success");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+            refreshPage();
+        } catch (error) {
+            console.error("Error adding praepverben:", error);
+            setMessage(`Fehler beim Hinzufügen der Präposition mit Verb: ${error.message}`);
+            setMessageType("error");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+        }
+    };
+
+    // Update existing praepverben
+    const updatePraepverben = async () => {
+        if (!validateForm()) return;
+
+        try {
+            const response = await fetch('/api/praepverben', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: id,
+                    Satz: newSatz,
+                    Verb: newVerb,
+                    Erklaerung: newErklaerung,
+                    Beispiele: newBeispiele,
+                    Loesung: newLoesung,
+                    quelle: newQuelle,
+                    Datum: newDatum
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Fehler beim Aktualisieren');
+            }
+
+            const data = await response.json();
+            resetForm();
+            setMessage("Präposition mit Verb erfolgreich aktualisiert!");
+            setMessageType("success");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+            refreshPage();
+        } catch (error) {
+            console.error("Error updating praepverben:", error);
+            setMessage(`Fehler beim Aktualisieren der Präposition mit Verb: ${error.message}`);
+            setMessageType("error");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-wg-neutral-50">
+            {/* Header */}
+            <Header session={session} />
+
+            {/* Main Content */}
+            <main className="container mx-auto py-8 px-4">
+                <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-sm border border-wg-neutral-200 p-6 mb-8 mt-24">
+                    
+                    {/* Suchfeld für bestehende Präpositionen mit Verben */}
+                    <div className="mb-8 relative">
+                        <FormField
+                            id="search"
+                            label="Präposition mit Verb zum Bearbeiten suchen:"
+                            helpText="Geben Sie den Anfang eines Satzes ein, um ihn zu finden"
+                        >
+                            <div className="relative">
+                                <TextField
+                                    id="search"
+                                    value={searchInput}
+                                    onChange={(e) => {
+                                        setSearchInput(e.target.value);
+                                        updateSuggestions(e.target.value);
+                                    }}
+                                    placeholder="Suchen..."
+                                    onFocus={handleSearchFocus}
+                                    onBlur={handleSearchBlur}
+                                    className="pl-10"
+                                />
+                                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-wg-neutral-500">
+                                    <Search size={18} />
+                                </div>
+                            </div>
+                        </FormField>
+                        <SuggestionList
+                            suggestions={suggestions}
+                            onSelect={handleSuggestionSelect}
+                            onCancel={() => setSuggestions([])}
+                            displayField="Satz"
+                        />
+                    </div>
+
+                    {/* Form Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <FormField id="satz" label="Satz:" className="mb-4">
+                                <TextField
+                                    id="satz"
+                                    value={newSatz}
+                                    onChange={(e) => setNewSatz(e.target.value)}
+                                    placeholder="z.B. Ich freue mich ___ den Urlaub."
+                                />
+                            </FormField>
+                            <FormField id="verb" label="Verb:" className="mb-4">
+                                <TextField
+                                    id="verb"
+                                    value={newVerb}
+                                    onChange={(e) => setNewVerb(e.target.value)}
+                                    placeholder="z.B. freuen"
+                                />
+                            </FormField>
+                            <FormField id="erklaerung" label="Erklärung:" className="mb-4">
+                                <TextField
+                                    id="erklaerung"
+                                    value={newErklaerung}
+                                    onChange={(e) => setNewErklaerung(e.target.value)}
+                                    placeholder="z.B. Freude ausdrücken"
+                                />
+                            </FormField>
+                        </div>
+                        <div>
+                            <FormField id="beispiele" label="Beispiele:" className="mb-4">
+                                <TextField
+                                    id="beispiele"
+                                    value={newBeispiele}
+                                    onChange={(e) => setNewBeispiele(e.target.value)}
+                                    placeholder="z.B. Sie freut sich auf die Reise."
+                                />
+                            </FormField>
+                            <FormField id="loesung" label="Lösung:" className="mb-4">
+                                <TextField
+                                    id="loesung"
+                                    value={newLoesung}
+                                    onChange={(e) => setNewLoesung(e.target.value)}
+                                    placeholder="z.B. auf"
+                                />
+                            </FormField>
+                            <FormField id="quelle" label="Quelle:" className="mb-4">
+                                <TextField
+                                    id="quelle"
+                                    value={newQuelle}
+                                    onChange={(e) => setNewQuelle(e.target.value)}
+                                    placeholder="z.B. Lehrbuch Seite 42"
+                                />
+                            </FormField>
+                            <FormField id="datum" label="Datum:" className="mb-4">
+                                <TextField
+                                    id="datum"
+                                    type="date"
+                                    value={newDatum}
+                                    onChange={(e) => setNewDatum(e.target.value)}
+                                    placeholder="Datum"
+                                    max={new Date().toISOString().split('T')[0]}
+                                />
+                            </FormField>
+                        </div>
+                    </div>
+
+                    {/* Form Actions */}
+                    <div className="mt-8 flex justify-center gap-4">
+                        <Button
+                            variant="secondary"
+                            size="lg"
+                            onClick={resetForm}
+                            icon={<X size={18} />}
+                            className="w-40"
+                        >
+                            Zurücksetzen
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            onClick={id ? updatePraepverben : addPraepverben}
+                            icon={id ? <Save size={18} /> : <Send size={18} />}
+                            className="w-40"
+                        >
+                            {id ? 'Aktualisieren' : 'Speichern'}
+                        </Button>
+                    </div>
+                </div>
+            </main>
+
+            {/* Toast Message */}
+            {message && (
+                <MessageToast
+                    message={message}
+                    type={messageType}
+                    onClose={() => setMessage('')}
+                />
+            )}
+        </div>
+    );
 }

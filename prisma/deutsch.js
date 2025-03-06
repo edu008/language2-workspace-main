@@ -47,13 +47,3 @@ export const getDeutsch = async () => {
     throw error;
   }
 }
-
-export const getDeutschCount = async () => {
-  try {
-    const count = await prisma.deutschs.count();
-    return count;
-  } catch (error) {
-    console.error('Error counting Deutsch:', error);
-    throw error;
-  }
-}

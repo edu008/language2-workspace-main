@@ -1,269 +1,371 @@
-import { getSprichwortCount } from "../prisma/sprichwort";
-import { getSprichwort } from "../prisma/sprichwort";
-import { useSession, signOut } from "next-auth/react"
-import Link from 'next/link';
-import Image from 'next/image'
-import { useState } from "react"
-import { getSession } from 'next-auth/react'
-import { useRouter } from 'next/router'
-import Message from "./Message";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { getSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { getSprichwort } from "../prisma/sprichwort";
+
+// Modern UI components
+import { X, Send, Save, Search } from 'lucide-react';
+import FormField from '@/components/WordGarden/FormField';
+import TextField from '@/components/WordGarden/TextField';
+import Button from '@/components/WordGarden/Button';
+import SuggestionList from '@/components/WordGarden/SuggestionList';
+import MessageToast from '@/components/WordGarden/MessageToast';
+import Header from '@/components/deutsch/Header';
 
 export async function getServerSideProps(context) {
-  const session = await getSession(context)
-  if (session) {
-    const sprichwort = await getSprichwort();
-
-    const kategorie = 'sprichwort'
-
-    const res = await fetch(`http://localhost:3000/api/standing?user=${encodeURIComponent(session.user.email)}&kategorie=${encodeURIComponent(kategorie)}`);
-    const standingSums = await res.json();
-
-    standingSums.trainedSum = standingSums.trainedSum ? standingSums.trainedSum : 0;
-    standingSums.alltimeSum = standingSums.alltimeSum ? standingSums.alltimeSum : 0;
-
-    const sprichwortCount = await getSprichwortCount();
-
-    const res2 = await fetch(`http://localhost:3000/api/standing?user=${encodeURIComponent(session.user.email)}`);
-    const finished = await res2.json();
-
-    const filteredSprichwort = sprichwort.filter((sprichwortObj) => {
-      return !finished.some((finishedObj) => {
-        return finishedObj.exercise === sprichwortObj.id;
-      });
-    });
-
-    const summary = standingSums.summary.map((standing) => {
-      const matchingSprichwort = sprichwort.find((sprichwortObj) => {
-        return standing.exercise === sprichwortObj.id;
-      });
-
-      if (matchingSprichwort) {
-        const date = new Date(matchingSprichwort.Datum);
-        const formattedDate = date.toLocaleDateString();
-        matchingSprichwort.Datum = formattedDate;
-
+    const session = await getSession(context);
+    
+    if (!session) {
         return {
-          summary: matchingSprichwort
+            redirect: {
+                destination: "/",
+                permanent: false,
+            },
         };
-      } else {
-        return {
-          summary: null
-        };
-      }
-    });
-
-    if (filteredSprichwort.length === 0) {
-      return {
-        redirect: {
-          destination: "/successSprichwort",
-          permanent: false,
-        },
-      };
-    } else {
-      const randomIndex = Math.floor(Math.random() * filteredSprichwort.length);
-      const randomSprichwort = filteredSprichwort[randomIndex];
-
-      const date = new Date(randomSprichwort.Datum);
-      const formattedDate = date.toLocaleDateString();
-      randomSprichwort.Datum = formattedDate
-      return {
-        props: {
-          sprichwortCount,
-          sprichwort: randomSprichwort,
-          standingSums,
-          summary
-        }
-      }
     }
-  } else {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
-  }
+    
+    try {
+        const sprichwortRaw = await getSprichwort() || [];
+        const formattedSprichwort = sprichwortRaw.map(item => ({
+            ...item,
+            Datum: item.Datum instanceof Date ? item.Datum.toISOString() : item.Datum
+        }));
+        return {
+            props: {
+                sprichwort: formattedSprichwort
+            }
+        };
+    } catch (error) {
+        console.error('Error in getServerSideProps:', error);
+        return {
+            props: {
+                sprichwort: [],
+                error: 'Failed to load data'
+            }
+        };
+    }
 }
 
-export default function Sprichwort() {
+export default function Sprichwort({ sprichwort }) {
+    const { data: session } = useSession();
+    const router = useRouter();
+    
+    // Form state
+    const [id, setId] = useState("");
+    const [newWort, setNewWort] = useState("");
+    const [newSprichwort, setNewSprichwort] = useState("");
+    const [newErklaerung, setNewErklaerung] = useState("");
+    const [newBeispiel, setNewBeispiel] = useState("");
+    const [newQuelle, setNewQuelle] = useState("");
+    const [newDatum, setNewDatum] = useState("");
+    
+    // UI state
+    const [message, setMessage] = useState("");
+    const [messageType, setMessageType] = useState("success");
+    const [suggestions, setSuggestions] = useState([]);
+    const [searchInput, setSearchInput] = useState("");
 
-  const { data: session } = useSession()
-  const router = useRouter();
-  const [newErklärung, setNewErklärung] = useState("");
-  const [newBeispiel, setNewBeispiel] = useState("");
-  const [newQuelle, setNewQuelle] = useState("");
-  const [newWort, setNewWort] = useState("");
-  const [newSprichwort, setNewSprichwort] = useState("");
-  const [message, setMessage] = useState("");
-
-  if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', (event) => {
-      if (!event.persisted) {
-        if (session) {
-          const standingIN = session.user.email;
-          const button = "trained";
-          fetch('/api/standing', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ standingIN, button })
-          })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error(error));
+    // Update suggestions with guard clause
+    const updateSuggestions = (inputValue) => {
+        if (!Array.isArray(sprichwort)) {
+            setSuggestions([]);
+            return;
         }
-      }
-    });
-  }
+        const filteredResults = sprichwort.filter((item) =>
+            item?.Sprichwort?.toLowerCase().includes(inputValue.toLowerCase())
+        );
+        setSuggestions(filteredResults);
+    };
 
-  const refreshPage = () => {
-    router.replace(router.asPath, undefined, { scroll: false });
-  };
+    const refreshPage = () => {
+        router.replace(router.asPath, undefined, { scroll: false });
+    };
 
- 
-  const addSprichwort = async () => {
-    if (newSprichwort === null || newSprichwort === '' || newWort === null || newWort === '' || newErklärung === null || newErklärung === '' || newBeispiel === null || newBeispiel === '' || newQuelle === null || newQuelle === '') {
-      setMessage("Fülle bitte alle Felder aus!");
-      setTimeout(() => {
-        setMessage("");
-      }, 10000);
-    } else {
+    // Reset form fields
+    const resetForm = () => {
+        setId('');
+        setNewWort('');
+        setNewSprichwort('');
+        setNewErklaerung('');
+        setNewBeispiel('');
+        setNewQuelle('');
+        setNewDatum('');
+        setSearchInput('');
+        setSuggestions([]);
+    };
 
-      await fetch('/api/sprichwort', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wort: newWort,
-          sprichwort: newSprichwort,
-          erklärung: newErklärung,
-          beispiel: newBeispiel,
-          quelle: newQuelle
-        })
-      })
-        .then(res => res.json())
-      resetForm();
-      setMessage("Erfolgreich hinzugefügt!");
-      setTimeout(() => {
-        setMessage("");
-      }, 10000);
-      refreshPage()
-    }
-  }
+    // Set form with data from selected item
+    const setForm = (item) => {
+        if (!item) return;
+        
+        setId(item.id || '');
+        setNewWort(item.Wort || '');
+        setNewSprichwort(item.Sprichwort || '');
+        setNewErklaerung(item.Erklaerung || '');
+        setNewBeispiel(item.Beispiel || '');
+        setNewQuelle(item.Quelle || '');
+        setNewDatum(item.Datum ? new Date(item.Datum).toISOString().split('T')[0] : '');
+    };
 
-  const resetForm = () => {
-    setNewQuelle('');
-    setNewSprichwort('');
-    setNewErklärung('');
-    setNewWort('');
-    setNewBeispiel('');
-  }
+    // Handle search focus
+    const handleSearchFocus = () => {
+        if (Array.isArray(sprichwort)) {
+            setSuggestions(sprichwort);
+        }
+    };
 
-  if (session) {
-    return <>
-      <Head>
-        <title>Sprichwörter</title>
-      </Head>
-      <div className="flex justify-between items-center bg-gray-100 p-4">
-        <Link href="/Worterfassung" className="py-2 px-4 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold text-xm"><FontAwesomeIcon icon={faArrowLeft} className="mr-2 fa-lg fa-fw" />Worterfassung</Link>
-        <div className="flex items-center">
-          <Image
-            src={session.user.image}
-            alt={session.user.name}
-            width={40}
-            height={40}
-            className="rounded-full mr-4"
-          />
-          <p className="text-gray-700 mr-4">{session.user.email}</p>
-          <button className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-2 px-4 rounded-full" onClick={() => signOut()}>Abmelden</button>
+    // Handle search blur
+    const handleSearchBlur = () => {
+        setTimeout(() => {
+            setSuggestions([]);
+        }, 200);
+    };
+
+    // Handle suggestion selection
+    const handleSuggestionSelect = (item) => {
+        setForm(item);
+        setSearchInput(item.Sprichwort);
+        setSuggestions([]);
+    };
+
+    // Validate form before submission
+    const validateForm = () => {
+        const errors = [];
+        if (!newWort.trim()) errors.push('Wort ist erforderlich');
+        if (!newSprichwort.trim()) errors.push('Sprichwort ist erforderlich');
+        if (!newErklaerung.trim()) errors.push('Erklärung ist erforderlich');
+        if (!newBeispiel.trim()) errors.push('Beispiel ist erforderlich');
+        if (!newQuelle.trim()) errors.push('Quelle ist erforderlich');
+        if (!newDatum) errors.push('Datum ist erforderlich');
+        
+        if (errors.length > 0) {
+            setMessage(errors.join('. '));
+            setMessageType('error');
+            setTimeout(() => {
+                setMessage('');
+            }, 10000);
+            return false;
+        }
+        return true;
+    };
+
+    // Add new sprichwort
+    const addSprichwort = async () => {
+        if (!validateForm()) return;
+
+        try {
+            const response = await fetch('/api/sprichwort', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Wort: newWort,
+                    Sprichwort: newSprichwort,
+                    Erklaerung: newErklaerung,
+                    Beispiel: newBeispiel,
+                    Quelle: newQuelle,
+                    Datum: newDatum
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Fehler beim Speichern');
+            }
+
+            const data = await response.json();
+            resetForm();
+            setMessage("Sprichwort erfolgreich hinzugefügt!");
+            setMessageType("success");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+            refreshPage();
+        } catch (error) {
+            console.error("Error adding sprichwort:", error);
+            setMessage(`Fehler beim Hinzufügen des Sprichworts: ${error.message}`);
+            setMessageType("error");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+        }
+    };
+
+    // Update existing sprichwort
+    const updateSprichwort = async () => {
+        if (!validateForm()) return;
+
+        try {
+            const response = await fetch('/api/sprichwort', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: id,
+                    Wort: newWort,
+                    Sprichwort: newSprichwort,
+                    Erklaerung: newErklaerung,
+                    Beispiel: newBeispiel,
+                    Quelle: newQuelle,
+                    Datum: newDatum
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Fehler beim Aktualisieren');
+            }
+
+            const data = await response.json();
+            resetForm();
+            setMessage("Sprichwort erfolgreich aktualisiert!");
+            setMessageType("success");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+            refreshPage();
+        } catch (error) {
+            console.error("Error updating sprichwort:", error);
+            setMessage(`Fehler beim Aktualisieren des Sprichworts: ${error.message}`);
+            setMessageType("error");
+            setTimeout(() => {
+                setMessage("");
+            }, 10000);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-wg-neutral-50">
+            {/* Header */}
+            <Header session={session} />
+
+            {/* Main Content */}
+            <main className="container mx-auto py-8 px-4">
+                <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-sm border border-wg-neutral-200 p-6 mb-8 mt-24">
+                    
+                    {/* Suchfeld für bestehende Sprichwörter */}
+                    <div className="mb-8 relative">
+                        <FormField
+                            id="search"
+                            label="Sprichwort zum Bearbeiten suchen:"
+                            helpText="Geben Sie den Anfang eines Sprichworts ein, um es zu finden"
+                        >
+                            <div className="relative">
+                                <TextField
+                                    id="search"
+                                    value={searchInput}
+                                    onChange={(e) => {
+                                        setSearchInput(e.target.value);
+                                        updateSuggestions(e.target.value);
+                                    }}
+                                    placeholder="Suchen..."
+                                    onFocus={handleSearchFocus}
+                                    onBlur={handleSearchBlur}
+                                    className="pl-10"
+                                />
+                                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-wg-neutral-500">
+                                    <Search size={18} />
+                                </div>
+                            </div>
+                        </FormField>
+                        <SuggestionList
+                            suggestions={suggestions}
+                            onSelect={handleSuggestionSelect}
+                            onCancel={() => setSuggestions([])}
+                            displayField="Sprichwort"
+                        />
+                    </div>
+
+                    {/* Form Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <FormField id="wort" label="Hauptwort:" className="mb-4">
+                                <TextField
+                                    id="wort"
+                                    value={newWort}
+                                    onChange={(e) => setNewWort(e.target.value)}
+                                    placeholder="z.B. Zeit"
+                                />
+                            </FormField>
+                            <FormField id="sprichwort" label="Sprichwort:" className="mb-4">
+                                <TextField
+                                    id="sprichwort"
+                                    value={newSprichwort}
+                                    onChange={(e) => setNewSprichwort(e.target.value)}
+                                    placeholder="z.B. Zeit heilt alle Wunden."
+                                />
+                            </FormField>
+                            <FormField id="erklaerung" label="Erklärung:" className="mb-4">
+                                <TextField
+                                    id="erklaerung"
+                                    value={newErklaerung}
+                                    onChange={(e) => setNewErklaerung(e.target.value)}
+                                    placeholder="z.B. Mit der Zeit verschwinden Schmerzen."
+                                />
+                            </FormField>
+                        </div>
+                        <div>
+                            <FormField id="beispiel" label="Beispiel:" className="mb-4">
+                                <TextField
+                                    id="beispiel"
+                                    value={newBeispiel}
+                                    onChange={(e) => setNewBeispiel(e.target.value)}
+                                    placeholder="z.B. Nach dem Verlust hat er Zeit gebraucht."
+                                />
+                            </FormField>
+                            <FormField id="quelle" label="Quelle:" className="mb-4">
+                                <TextField
+                                    id="quelle"
+                                    value={newQuelle}
+                                    onChange={(e) => setNewQuelle(e.target.value)}
+                                    placeholder="z.B. Volksweisheit"
+                                />
+                            </FormField>
+                            <FormField id="datum" label="Datum:" className="mb-4">
+                                <TextField
+                                    id="datum"
+                                    type="date"
+                                    value={newDatum}
+                                    onChange={(e) => setNewDatum(e.target.value)}
+                                    placeholder="Datum"
+                                    max={new Date().toISOString().split('T')[0]}
+                                />
+                            </FormField>
+                        </div>
+                    </div>
+
+                    {/* Form Actions */}
+                    <div className="mt-8 flex justify-center gap-4">
+                        <Button
+                            variant="secondary"
+                            size="lg"
+                            onClick={resetForm}
+                            icon={<X size={18} />}
+                            className="w-40"
+                        >
+                            Zurücksetzen
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            onClick={id ? updateSprichwort : addSprichwort}
+                            icon={id ? <Save size={18} /> : <Send size={18} />}
+                            className="w-40"
+                        >
+                            {id ? 'Aktualisieren' : 'Speichern'}
+                        </Button>
+                    </div>
+                </div>
+            </main>
+
+            {/* Toast Message */}
+            {message && (
+                <MessageToast
+                    message={message}
+                    type={messageType}
+                    onClose={() => setMessage('')}
+                />
+            )}
         </div>
-      </div>
-      <div className="max-w-5xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
-        <h1 className="text-5xl font-bold text-center mb-8">Sprichwörter</h1>
-        <form className="my-4">
-          <h1 className="text-2xl font-bold mb-4">Neues Sprichwort erfassen</h1>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="wort" className="block text_md font-medium text-gray-700">
-                Wort:
-              </label>
-              <input
-                id="wort"
-                type="text"
-                onChange={(e) => setNewWort(e.target.value)}
-                value={newWort}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="sprichwort" className="block text_md font-medium text-gray-700">
-                Sprichwort:
-              </label>
-              <input
-                id="sprichwort"
-                type="text"
-                onChange={(e) => setNewSprichwort(e.target.value)}
-                value={newSprichwort}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="erklärung" className="block text_md font-medium text-gray-700">
-                Erklärung:
-              </label>
-              <input
-                id="erklärung"
-                type="text"
-                onChange={(e) => setNewErklärung(e.target.value)}
-                value={newErklärung}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="beispiel" className="block text_md font-medium text-gray-700">
-                Beispiele:
-              </label>
-              <input
-                id="beispiel"
-                type="text"
-                onChange={(e) => setNewBeispiel(e.target.value)}
-                value={newBeispiel}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="quelle" className="block text_md font-medium text-gray-700">
-                Quelle:
-              </label>
-              <input
-                id="quelle"
-                type="text"
-                onChange={(e) => setNewQuelle(e.target.value)}
-                value={newQuelle}
-                className="mt-1 block w-full rounded-md border-2 border-gray-400 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-                style={{ height: '2.5rem' }}
-              />
-            </div>
-          </div>
-          {message && <Message message={message} />}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              addSprichwort();
-            }}
-            className="mt-4 w-full px-4 py-2 rounded text-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <FontAwesomeIcon icon={faPaperPlane} className="mr-2 fa-lg fa-fw" />
-          </button>
-        </form>
-      </div>
-    </>
-  }
+    );
 }

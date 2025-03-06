@@ -14,7 +14,7 @@ export default function Header({ session }) {
     setIsNavigating(true);
     
     // Special case for enterdeutsch page - redirect to Worterfassung
-    if (router.pathname === '/enterdeutsch') {
+    if (router.pathname === '/enterdeutsch' || router.pathname === '/enterpraeposition' || router.pathname === '/enterpraepverben' || router.pathname === '/enterredewendung' || router.pathname === '/entersprichwort') {
       router.push('/Worterfassung').then(() => {
         // Reset navigating state after navigation completes
         setIsNavigating(false);
@@ -36,6 +36,11 @@ export default function Header({ session }) {
     '/redewendung': 'Redewendung',
     '/praepverben': 'Präpositionen & Verben',
     '/enterdeutsch': 'Bearbeitung Wortbedeutungen',
+    '/enterpraeposition': 'Bearbeitung Präpositionen',
+    '/entersprichwort': 'Bearbeitung Sprichwörter',
+    '/enterredewendung': 'Bearbeitung Redewendung',
+    '/enterpraepverben': 'Bearbeitung Präpositionen & Verben',
+
   };
 
   const pageTitle = pageTitles[router.pathname] || 'Not Found';
