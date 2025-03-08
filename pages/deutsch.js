@@ -2,13 +2,26 @@ import { useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useDeutschContext, useFilterContext, useDataContext } from "../contexts/AppContext";
 
-// Dynamic imports for components
+// Dynamic imports for components with loading placeholders
 const WordCard = dynamic(() => import("../components/ui/WordCard"), {
-  ssr: true
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[500px] bg-gray-100 animate-pulse rounded-2xl flex items-center justify-center">
+      <p className="text-gray-500">Lade Karte...</p>
+    </div>
+  )
 });
 
 const ExercisePage = dynamic(() => import("../components/layout/ExercisePage"), {
-  ssr: true
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-700 text-lg">Lade Übungsseite...</p>
+      </div>
+    </div>
+  )
 });
 
 export default function Deutsch() {

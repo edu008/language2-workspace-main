@@ -20,7 +20,7 @@ const Stats = ({ totalCount, trainedCount, attempts, progress }) => {
         </div>
         <div className="text-center flex-1">
           <p className="text-sm text-gray-700 font-medium">Versuche</p>
-          <p className="text-3xl font-bold text-amber-700">{effectiveAttempts}</p>
+          <p className="text-3xl font-bold text-amber-900">{effectiveAttempts}</p>
         </div>
         <div className="text-center flex-1">
           <p className="text-sm text-gray-700 font-medium">Fortschritt</p>

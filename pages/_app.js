@@ -10,9 +10,17 @@ import '@/styles/output.css';
 import '../styles/globals.css';
 import '../styles/index.css';
 
-// Import FontAwesome config
+// Import FontAwesome config - optimized to only import what's needed
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import { config } from '@fortawesome/fontawesome-svg-core';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons/faArrowLeft';
+import { faFilter } from '@fortawesome/free-solid-svg-icons/faFilter';
+import { faTrashRestore } from '@fortawesome/free-solid-svg-icons/faTrashRestore';
+import { faTable } from '@fortawesome/free-solid-svg-icons/faTable';
+
+// Only add the specific icons we use
+library.add(faArrowLeft, faFilter, faTrashRestore, faTable);
 config.autoAddCss = false;
 
 // Dynamic imports for components that aren't needed immediately

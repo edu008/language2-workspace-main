@@ -7,7 +7,35 @@ module.exports = withMT({
     "./styles/**/*.css",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
+    "./contexts/**/*.{js,jsx,ts,tsx}",
   ],
+  purge: {
+    enabled: process.env.NODE_ENV === 'production',
+    content: [
+      './components/**/*.{js,jsx,ts,tsx}',
+      './pages/**/*.{js,jsx,ts,tsx}',
+      './contexts/**/*.{js,jsx,ts,tsx}',
+      './styles/**/*.css',
+    ],
+    options: {
+      safelist: [
+        // Klassen, die dynamisch generiert werden und nicht entfernt werden sollten
+        /^grid-cols-/,
+        /^sm:grid-cols-/,
+        /^lg:grid-cols-/,
+        /^text-/,
+        /^bg-/,
+        /^from-/,
+        /^to-/,
+        /^border-/,
+        /^h-/,
+        /^w-/,
+        /^p-/,
+        /^m-/,
+        /^rounded-/,
+      ],
+    },
+  },
   darkMode: ["class"],
   safelist: [
     "grid-cols-1",
@@ -243,6 +271,19 @@ module.exports = withMT({
           "0%": { opacity: "0", transform: "translateY(50px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "grow-x": {
+          "0%": { transform: "scaleX(0)" },
+          "100%": { transform: "scaleX(1)" },
+        },
+        "draw": {
+          "0%": { strokeDasharray: "1 1000", strokeDashoffset: "1000", opacity: "0" },
+          "100%": { strokeDasharray: "1000 1000", strokeDashoffset: "0", opacity: "1" },
+        },
+        "pulse-glow": {
+          "0%": { boxShadow: "0px 0px 0px rgba(59, 130, 246, 0)" },
+          "50%": { boxShadow: "0px 0px 30px rgba(59, 130, 246, 0.5)" },
+          "100%": { boxShadow: "0px 0px 0px rgba(59, 130, 246, 0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -262,6 +303,9 @@ module.exports = withMT({
         "slide-in": "slide-in 0.6s ease-out",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         "fade-up": "fade-up 0.5s ease-out forwards", // Neue Animation hinzugefügt
+        "grow-x": "grow-x 0.5s ease-out forwards",
+        "draw": "draw 1s ease-out forwards",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
       },
     },
   },

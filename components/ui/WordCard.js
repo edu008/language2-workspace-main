@@ -76,7 +76,7 @@ const WordCard = memo(function WordCard({ showTranslation, onFlip }) {
               <p className="text-white/70">Stamm: {currentItem.Root}</p>
             )}
             <div className="mt-6 pt-4 border-t border-white/10">
-              <h4 className="text-lg font-semibold text-white mb-2">Beispiel</h4>
+              <h3 className="text-lg font-semibold text-white mb-2">Beispiel</h3>
               <div className="space-y-4">
                 {Array.isArray(currentItem.Article) && currentItem.Article.length > 0 ? (
                   currentItem.Article.map((example, index) => (

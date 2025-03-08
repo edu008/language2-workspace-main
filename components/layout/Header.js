@@ -52,6 +52,7 @@ export default function Header({ session }) {
               <button
                 onClick={handleUebungsauswahlClick}
                 disabled={buttonDisabled}
+                aria-label="Zurück zur Übungsauswahl"
                 className={`p-2 rounded-md ${buttonDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'} transition-colors`}
               >
                 <FontAwesomeIcon icon={faArrowLeft} className="text-gray-600" style={{ height: '24px', width: '24px' }} />
