@@ -1,16 +1,5 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-// Debugging-Log für die Imports
-console.log("LeaderboardCard Imports:", {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-});
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/stats/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/stats/card";
 
 const LeaderboardCard = ({ users, title, className = "" }) => {
   return (

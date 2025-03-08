@@ -10,6 +10,7 @@ export default function ActionButtons({ onCorrect, onIncorrect, isLoading }) {
           onClick={onCorrect}
           disabled={isLoading}
           className={styles.correctButton}
+          aria-label="Richtig"
         >
           Richtig
         </button>
@@ -17,6 +18,7 @@ export default function ActionButtons({ onCorrect, onIncorrect, isLoading }) {
           onClick={onIncorrect}
           disabled={isLoading}
           className={styles.incorrectButton}
+          aria-label="Falsch"
         >
           Falsch
         </button>

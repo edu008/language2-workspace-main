@@ -98,15 +98,6 @@ model redewendungs {
 }
 
 
-model standings {
-  id        String @id @default(auto()) @map("_id") @db.ObjectId
-  alltime   Int
-  correct   Int
-  exercise  String @db.ObjectId
-  kategorie String
-  trained   Int
-  user      String
-}
 
 
 model standing {

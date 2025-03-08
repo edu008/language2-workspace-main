@@ -1,24 +1,36 @@
-import '@/styles/output.css';
-import '@fortawesome/fontawesome-svg-core/styles.css';
-import { config } from '@fortawesome/fontawesome-svg-core';
-import LoadingScreen from '../components/deutsch/LoadingScreen';
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { SessionProvider, useSession } from 'next-auth/react';
-import { AppContext } from '../pages/context/AppContext';
-import { AppProvider } from '../pages/context/AppContext';
+import { AppProvider, useBaseContext } from '../contexts/AppContext';
+import dynamic from 'next/dynamic';
+import Head from 'next/head';
+
+// Import CSS
+import '@/styles/output.css';
 import '../styles/globals.css';
 import '../styles/index.css';
 
+// Import FontAwesome config
+import '@fortawesome/fontawesome-svg-core/styles.css';
+import { config } from '@fortawesome/fontawesome-svg-core';
 config.autoAddCss = false;
+
+// Dynamic imports for components that aren't needed immediately
+const LoadingScreen = dynamic(() => import('../components/ui/LoadingScreen'), {
+  ssr: false
+});
+
+const LearningTable = dynamic(() => import('../components/ui/LearningTable'), {
+  ssr: false
+});
 
 function AuthWrapper({ Component, pageProps }) {
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const router = useRouter();
-  const { isDataLoaded } = useContext(AppContext);
+  const { isDataLoaded } = useBaseContext();
 
-  const publicRoutes = ['/', '/Worterfassung', '/enterdeutsch', '/enterpraeposition', '/enterpraepverben', '/enterredewendung', '/entersprichwort','/statistics'];
+  const publicRoutes = ['/', '/Worterfassung', '/enterdeutsch', '/enterpraeposition', '/enterpraepverben', '/enterredewendung', '/entersprichwort', '/statistics'];
 
   useEffect(() => {
     if (!loading) {
@@ -37,7 +49,13 @@ function AuthWrapper({ Component, pageProps }) {
   if (!session && !isPublicRoute) {
     return <LoadingScreen />;
   }
-  return <Component {...pageProps} />;
+  
+  return (
+    <>
+      <Component {...pageProps} />
+      <LearningTable />
+    </>
+  );
 }
 
 export default function App({ Component, pageProps: { session, ...pageProps } }) {
@@ -72,6 +90,9 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
 
   return (
     <SessionProvider session={session}>
+      <Head>
+        <title>Deutsch Lernen - Interaktive Übungen</title>
+      </Head>
       <AppProvider>
         <AuthWrapper Component={Component} pageProps={pageProps} />
       </AppProvider>

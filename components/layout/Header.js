@@ -13,18 +13,11 @@ export default function Header({ session }) {
     // Set navigating state to true to prevent UI flashing
     setIsNavigating(true);
     
-    // Special case for enterdeutsch page - redirect to Worterfassung
-    if (router.pathname === '/enterdeutsch' || router.pathname === '/enterpraeposition' || router.pathname === '/enterpraepverben' || router.pathname === '/enterredewendung' || router.pathname === '/entersprichwort' || router.pathname === '/statistics' ) {
-      router.push('/Worterfassung').then(() => {
-        // Reset navigating state after navigation completes
-        setIsNavigating(false);
-      });
-    } else {
-      router.push('/').then(() => {
-        // Reset navigating state after navigation completes
-        setIsNavigating(false);
-      });
-    }
+    // Always navigate to home page
+    router.push('/').then(() => {
+      // Reset navigating state after navigation completes
+      setIsNavigating(false);
+    });
   };
 
   const pageTitles = {

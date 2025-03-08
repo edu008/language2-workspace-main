@@ -11,25 +11,25 @@ const Stats = ({ totalCount, trainedCount, attempts, progress }) => {
     <div className="p-6 bg-white rounded-lg">
       <div className="flex justify-between items-center mb-4">
         <div className="text-center flex-1">
-          <p className="text-sm text-gray-500">Gesamtanzahl</p>
-          <p className="text-3xl font-bold text-blue-600">{effectiveTotalCount}</p>
+          <p className="text-sm text-gray-700 font-medium">Gesamtanzahl</p>
+          <p className="text-3xl font-bold text-blue-800">{effectiveTotalCount}</p>
         </div>
         <div className="text-center flex-1">
-          <p className="text-sm text-gray-500">Trainiert</p>
-          <p className="text-3xl font-bold text-green-600">{effectiveTrainedCount}</p>
+          <p className="text-sm text-gray-700 font-medium">Trainiert</p>
+          <p className="text-3xl font-bold text-green-800">{effectiveTrainedCount}</p>
         </div>
         <div className="text-center flex-1">
-          <p className="text-sm text-gray-500">Versuche</p>
-          <p className="text-3xl font-bold text-yellow-600">{effectiveAttempts}</p>
+          <p className="text-sm text-gray-700 font-medium">Versuche</p>
+          <p className="text-3xl font-bold text-amber-700">{effectiveAttempts}</p>
         </div>
         <div className="text-center flex-1">
-          <p className="text-sm text-gray-500">Fortschritt</p>
-          <p className="text-3xl font-bold text-purple-600">{effectiveProgress}%</p>
+          <p className="text-sm text-gray-700 font-medium">Fortschritt</p>
+          <p className="text-3xl font-bold text-purple-800">{effectiveProgress}%</p>
         </div>
       </div>
       <div className="h-4 bg-gray-200 rounded-full mb-4">
         <div
-          className="h-4 bg-blue-500 rounded-full transition-all duration-300 ease-in-out"
+          className="h-4 bg-blue-700 rounded-full transition-all duration-300 ease-in-out"
           style={{ width: `${effectiveProgress}%` }}
         ></div>
       </div>

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { getSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import Head from 'next/head';
 import { getPraeposition } from "../prisma/praeposition";
 
 // Modern UI components
@@ -11,8 +10,7 @@ import FormField from '@/components/WordGarden/FormField';
 import TextField from '@/components/WordGarden/TextField';
 import Button from '@/components/WordGarden/Button';
 import SuggestionList from '@/components/WordGarden/SuggestionList';
-import MessageToast from '@/components/WordGarden/MessageToast';
-import Header from '@/components/layout/Header';
+import EntryPage from '@/components/layout/EntryPage';
 
 export async function getServerSideProps(context) {
     const session = await getSession(context);
@@ -223,15 +221,15 @@ export default function Praeposition({ praeposition }) {
     };
 
     return (
-        <div className="min-h-screen bg-wg-neutral-50">
-            {/* Header */}
-            <Header session={session} />
-
-            {/* Main Content */}
-            <main className="container mx-auto py-8 px-4">
-                <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-sm border border-wg-neutral-200 p-6 mb-8 mt-24">
-                    
-                    {/* Suchfeld für bestehende Präpositionen */}
+        <EntryPage
+            title="Präposition Erfassung"
+            message={message}
+            messageType={messageType}
+            setMessage={setMessage}
+        >
+            {/* Form Content */}
+            <div>
+                {/* Suchfeld für bestehende Präpositionen */}
                     <div className="mb-8 relative">
                         <FormField
                             id="search"
@@ -327,17 +325,7 @@ export default function Praeposition({ praeposition }) {
                             {id ? 'Aktualisieren' : 'Speichern'}
                         </Button>
                     </div>
-                </div>
-            </main>
-
-            {/* Toast Message */}
-            {message && (
-                <MessageToast
-                    message={message}
-                    type={messageType}
-                    onClose={() => setMessage('')}
-                />
-            )}
-        </div>
+            </div>
+        </EntryPage>
     );
 }

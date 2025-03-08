@@ -1,28 +1,63 @@
 /** @type {import('next').NextConfig} */
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true', // Analyse nur, wenn ANALYZE=true gesetzt ist
-});
-
 const nextConfig = {
   reactStrictMode: false,
-
-  // Bildoptimierung für spezifische Domains
   images: {
-    domains: [
-      'lh3.googleusercontent.com',
-      'avatars.githubusercontent.com',
-      'cdn.discordapp.com',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.discordapp.com',
+      },
     ],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
   },
-
-  // Aktiviert Komprimierung für kleinere Payloads
   compress: true,
-
-  // Experimentelle Optimierungen (optional)
+  productionBrowserSourceMaps: false,
   experimental: {
-    scrollRestoration: true, // Verbessert die User Experience beim Zurück- und Weitergehen
+    scrollRestoration: true,
+    optimizePackageImports: ['@fortawesome/fontawesome-svg-core', 'framer-motion', 'recharts'],
+  },
+  compiler: {
+    removeConsole: {
+      exclude: ['error', 'warn'],
+    },
+  },
+  webpack: (config, { dev, isServer }) => {
+    if (!dev) {
+      config.optimization.minimize = true;
+    }
+    return config;
+  },
+  async headers() {
+    return [
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/fonts/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
   },
 };
 
-// Exportiere die Konfiguration mit dem Bundle-Analyzer
-module.exports = withBundleAnalyzer(nextConfig);
+module.exports = nextConfig;

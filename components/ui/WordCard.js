@@ -1,11 +1,15 @@
-import { useState, useEffect, useContext, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { motion } from "framer-motion";
-import { AppContext } from "../../pages/context/AppContext";
+import { useDeutschContext } from "../../contexts/AppContext";
 
-export default function WordCard({ showTranslation, onFlip }) {
-  const { currentItem } = useContext(AppContext);
+// Use memo to prevent unnecessary re-renders
+const WordCard = memo(function WordCard({ showTranslation, onFlip }) {
+  const { currentItem } = useDeutschContext();
   const [isVisible, setIsVisible] = useState(false);
-  const [cardHeight, setCardHeight] = useState("auto");
+  
+  // Use a fixed height to prevent layout shifts
+  const cardHeight = "500px"; // Fixed height instead of dynamic calculation
+  
   const frontCardRef = useRef(null);
   const backCardRef = useRef(null);
 
@@ -14,30 +18,7 @@ export default function WordCard({ showTranslation, onFlip }) {
     setIsVisible(true);
   }, []);
 
-  // Effekt zur Berechnung der Kartenhöhe basierend auf dem Inhalt
-  useEffect(() => {
-    if (currentItem.deutsch && frontCardRef.current && backCardRef.current) {
-      // Wir entfernen temporär die absolute Positionierung, um die natürliche Höhe zu messen
-      frontCardRef.current.style.position = "static";
-      backCardRef.current.style.position = "static";
-      backCardRef.current.style.transform = "none";
-      
-      // Messen der Höhe beider Seiten
-      const frontHeight = frontCardRef.current.offsetHeight;
-      const backHeight = backCardRef.current.offsetHeight;
-      
-      // Wiederherstellen der ursprünglichen Stile
-      frontCardRef.current.style.position = "absolute";
-      backCardRef.current.style.position = "absolute";
-      backCardRef.current.style.transform = "rotateY(180deg)";
-      
-      // Verwenden der größeren Höhe für beide Seiten
-      const maxHeight = Math.max(frontHeight, backHeight, 440); // Mindesthöhe von 440px
-      setCardHeight(`${maxHeight}px`);
-    }
-  }, [currentItem.deutsch]);
-
-  if (!currentItem.deutsch) {
+  if (!currentItem) {
     return (
       <div className="w-full min-h-[440px] rounded-2xl bg-gray-200 animate-pulse flex items-center justify-center">
         <p className="text-gray-500">Lade Daten...</p>
@@ -45,8 +26,8 @@ export default function WordCard({ showTranslation, onFlip }) {
     );
   }
 
-  const formattedDate = currentItem.deutsch.DateEntryWord
-    ? new Date(currentItem.deutsch.DateEntryWord).toLocaleDateString("de-DE")
+  const formattedDate = currentItem.DateEntryWord
+    ? new Date(currentItem.DateEntryWord).toLocaleDateString("de-DE")
     : "Datum nicht verfügbar";
 
   return (
@@ -73,32 +54,32 @@ export default function WordCard({ showTranslation, onFlip }) {
           style={{ backfaceVisibility: "hidden" }}
         >
           <div>
-            <h2 className="text-3xl font-bold mb-6">{currentItem.deutsch.Word || "Unbekannt"}</h2>
-            {(currentItem.deutsch.Artikel || currentItem.deutsch.Prefix || currentItem.deutsch.Root) && (
+            <h2 className="text-3xl font-bold mb-6">{currentItem.Word || "Unbekannt"}</h2>
+            {(currentItem.Artikel || currentItem.Prefix || currentItem.Root) && (
               <p className="inline-block px-3 py-1 mb-4 text-xl font-bold bg-white/20 rounded-full backdrop-blur-sm">
-                {currentItem.deutsch.Artikel || ""}{" "}
-                {currentItem.deutsch.Prefix && currentItem.deutsch.Root
-                  ? `${currentItem.deutsch.Prefix}- ${currentItem.deutsch.Root}`
-                  : `${currentItem.deutsch.Prefix || ""}${currentItem.deutsch.Root || ""}`}
+                {currentItem.Artikel || ""}{" "}
+                {currentItem.Prefix && currentItem.Root
+                  ? `${currentItem.Prefix}- ${currentItem.Root}`
+                  : `${currentItem.Prefix || ""}${currentItem.Root || ""}`}
               </p>
             )}
 
-            {currentItem.deutsch.Definition && (
-              <p className="text-white/70">Struktur: {currentItem.deutsch.Definition}</p>
+            {currentItem.Definition && (
+              <p className="text-white/70">Struktur: {currentItem.Definition}</p>
             )}
-            {currentItem.deutsch.TypeOfWord?.length > 0 && (
+            {currentItem.TypeOfWord?.length > 0 && (
               <p className="text-white/70">
-                Wortart: {currentItem.deutsch.TypeOfWord.map((t) => t.TypeOfWord).join(", ")}
+                Wortart: {currentItem.TypeOfWord.map((t) => t.TypeOfWord).join(", ")}
               </p>
             )}
-            {currentItem.deutsch.Root && (
-              <p className="text-white/70">Stamm: {currentItem.deutsch.Root}</p>
+            {currentItem.Root && (
+              <p className="text-white/70">Stamm: {currentItem.Root}</p>
             )}
             <div className="mt-6 pt-4 border-t border-white/10">
               <h4 className="text-lg font-semibold text-white mb-2">Beispiel</h4>
               <div className="space-y-4">
-                {Array.isArray(currentItem.deutsch.Article) && currentItem.deutsch.Article.length > 0 ? (
-                  currentItem.deutsch.Article.map((example, index) => (
+                {Array.isArray(currentItem.Article) && currentItem.Article.length > 0 ? (
+                  currentItem.Article.map((example, index) => (
                     <div key={index} className="space-y-2 leading-relaxed bg-white/20 p-2 rounded-md">
                       <p className="text-white">{example.Sentence_D || "Kein Satz verfügbar"}</p>
                       <p className="text-sm text-white/60">
@@ -125,11 +106,13 @@ export default function WordCard({ showTranslation, onFlip }) {
         >
           <div>
             <p className="text-white leading-relaxed text-3xl font-bold text-center">
-              {currentItem.deutsch.Transl_F?.map((t) => t.Transl_F).join("; ") || "Keine Übersetzung"}
+              {currentItem.Transl_F?.map((t) => t.Transl_F).join("; ") || "Keine Übersetzung"}
             </p>
           </div>
         </div>
       </div>
     </motion.div>
   );
-}
+});
+
+export default WordCard;

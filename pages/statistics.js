@@ -1,17 +1,17 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
-import StatsCard from "@/components/stats/StatsCard";
-import CategoryDistribution from "@/components/stats/CategoryDistribution";
-import ProgressChart from "@/components/stats/ProgressChart";
-import AchievementCard from "@/components/stats/AchievementCard";
-import LeaderboardCard from "@/components/stats/LeaderboardCard";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import StatsCard from "@/components/ui/stats/StatsCard";
+import CategoryDistribution from "@/components/ui/stats/CategoryDistribution";
+import ProgressChart from "@/components/ui/stats/ProgressChart";
+import AchievementCard from "@/components/ui/stats/AchievementCard";
+import LeaderboardCard from "@/components/ui/stats/LeaderboardCard";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/stats/tabs";
 import { Award, BookOpen, Zap, CheckSquare, Clock, Target } from "lucide-react";
-import { AppContext } from "./context/AppContext";
-import LoadingScreen from "@/components/deutsch/LoadingScreen";
+import { useBaseContext } from "../contexts/AppContext";
+import LoadingScreen from "@/components/ui/LoadingScreen";
 
 const Statistics = () => {
-  const { session } = useContext(AppContext);
+  const { session } = useBaseContext();
   const [timeframe, setTimeframe] = useState("annual"); // Standard: jährlich
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState({

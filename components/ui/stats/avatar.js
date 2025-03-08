@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
-import { cn } from '../../pages/api/auth/lib/utils'; // Überprüfe diesen Pfad!
+import { cn } from '@/pages/api/auth/lib/utils';
 
 export const Avatar = React.forwardRef(({ className, ...props }, ref) => (
   <AvatarPrimitive.Root

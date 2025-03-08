@@ -154,9 +154,9 @@ module.exports = withMT({
           200: "#d4d6e5",
           300: "#b3b7d0",
           400: "#8c91b6",
-          500: "#6e739e",
-          600: "#585c82",
-          700: "#484b6a",
+          500: "#5A5E83", // Dunklere Farbe für besseren Kontrast (war: #6e739e)
+          600: "#484C6E", // Dunklere Farbe für besseren Kontrast (war: #585c82)
+          700: "#3A3D59", // Dunklere Farbe für besseren Kontrast (war: #484b6a)
           800: "#3e4159",
           900: "#363849",
           950: "#25262f",

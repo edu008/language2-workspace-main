@@ -1,25 +1,28 @@
 .actionButtonsContainer {
     padding: 1.5rem;
     background-color: white;
+    height: 100px; /* Fixed height to prevent layout shifts */
   }
   
   .buttonGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+    height: 100%; /* Fill the container height */
   }
   
   .correctButton {
     width: 100%;
     padding: 0.75rem;
-    background-color: #10b981;
+    background-color: #047857; /* Darker green for better contrast */
     color: white;
     border-radius: 0.5rem;
     transition: background-color 0.2s;
+    font-weight: bold; /* Make text bold for better visibility */
   }
   
   .correctButton:hover {
-    background-color: #059669;
+    background-color: #065f46; /* Even darker on hover */
   }
   
   .correctButton:focus {
@@ -34,14 +37,15 @@
   .incorrectButton {
     width: 100%;
     padding: 0.75rem;
-    background-color: #ef4444;
+    background-color: #b91c1c; /* Darker red for better contrast */
     color: white;
     border-radius: 0.5rem;
     transition: background-color 0.2s;
+    font-weight: bold; /* Make text bold for better visibility */
   }
   
   .incorrectButton:hover {
-    background-color: #dc2626;
+    background-color: #991b1b; /* Even darker on hover */
   }
   
   .incorrectButton:focus {
