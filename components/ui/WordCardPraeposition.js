@@ -52,12 +52,19 @@ export default function PraepositionCard({ wordData, showTranslation, onFlip }) 
       solutions = Array(placeholders.length).fill(solutions[0]);
     }
 
-    let formattedSentence = wordData.satz;
-    solutions.forEach((solution) => {
-      formattedSentence = formattedSentence.replace("_", `<strong>${solution}</strong>`);
-    });
-
-    return formattedSentence;
+    // Safer approach without using dangerouslySetInnerHTML
+    const parts = wordData.satz.split('_');
+    const result = [];
+    
+    // Interleave parts and solutions
+    for (let i = 0; i < parts.length; i++) {
+      result.push(parts[i]);
+      if (i < solutions.length) {
+        result.push(<strong key={i}>{solutions[i]}</strong>);
+      }
+    }
+    
+    return result;
   };
 
   return (
@@ -103,10 +110,9 @@ export default function PraepositionCard({ wordData, showTranslation, onFlip }) 
         >
           <div className="flex-grow flex flex-col items-center justify-center text-center">
             <p className="text-3xl font-bold mb-6">{wordData.loesung || "Keine Lösung"}</p>
-            <p
-              className="text-xl font-medium text-green-100 rounded-md border p-4 bg-white/20 shadow-inner"
-              dangerouslySetInnerHTML={{ __html: formatSentenceWithSolutions() }}
-            />
+            <p className="text-xl font-medium text-green-100 rounded-md border p-4 bg-white/20 shadow-inner">
+              {formatSentenceWithSolutions()}
+            </p>
           </div>
           {(wordData.quelle || formattedDate) && (
             <div className="mt-6 pt-4 border-t border-white/10">

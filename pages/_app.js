@@ -74,25 +74,35 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
   const [isRouteChanging, setIsRouteChanging] = useState(false);
   const router = useRouter();
 
-  // Function to clean up any WebSocket connections
+  // Function to clean up any WebSocket connections using our optimization utilities
   const cleanupWebSockets = useCallback(() => {
-    // Close any WebSocket connections that might be open
-    if (typeof window !== 'undefined') {
-      // This will help browsers know they can cache the page
-      // when navigating away from it
-      const websockets = Object.keys(window)
-        .filter(key => key.includes('WebSocket') || (window[key] && typeof window[key] === 'object' && window[key].OPEN))
-        .map(key => window[key]);
-      
-      websockets.forEach(ws => {
-        if (ws && typeof ws.close === 'function') {
-          try {
-            ws.close();
-          } catch (e) {
-            console.warn('Error closing WebSocket:', e);
+    // Use the bfcache-helper.js functionality which is already loaded in _document.js
+    if (typeof window !== 'undefined' && window.JsOptimization) {
+      try {
+        // Start performance monitoring for the cleanup
+        window.JsOptimization.PerformanceMonitor.start('websocket-cleanup');
+        
+        // The actual cleanup is handled by bfcache-helper.js
+        // This is just an additional safety measure
+        const websockets = Object.keys(window)
+          .filter(key => key.includes('WebSocket') || (window[key] && typeof window[key] === 'object' && window[key].OPEN))
+          .map(key => window[key]);
+        
+        websockets.forEach(ws => {
+          if (ws && typeof ws.close === 'function') {
+            try {
+              ws.close();
+            } catch (e) {
+              console.warn('Error closing WebSocket:', e);
+            }
           }
-        }
-      });
+        });
+        
+        // End performance monitoring
+        window.JsOptimization.PerformanceMonitor.end('websocket-cleanup');
+      } catch (error) {
+        console.warn('Error in WebSocket cleanup:', error);
+      }
     }
   }, []);
 

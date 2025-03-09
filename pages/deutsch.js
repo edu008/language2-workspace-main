@@ -66,6 +66,7 @@ export default function Deutsch() {
     setSuggestions(matchingWords);
   }, [deutschData, isRootSearch]);
 
+  // Use useCallback to create the handler once
   const handleSearchChange = useCallback((e) => {
     const inputValue = e.target.value;
     setSearchInput(inputValue);
@@ -79,12 +80,22 @@ export default function Deutsch() {
     }
     updateSuggestions(inputValue);
     
-    // Debounce the filter application for better performance
-    const timeoutId = setTimeout(() => {
-      applyFilters(updatePoolsFromFilters);
-    }, 300);
-    
-    return () => clearTimeout(timeoutId);
+    // Use the debounce utility from js-optimization.js if available, otherwise fallback
+    if (typeof window !== 'undefined' && window.JsOptimization) {
+      // This will be initialized on the client side after the component mounts
+      if (!window.debouncedApplyFilters) {
+        window.debouncedApplyFilters = window.JsOptimization.debounce((filters) => {
+          applyFilters(filters);
+        }, 300);
+      }
+      window.debouncedApplyFilters(updatePoolsFromFilters);
+    } else {
+      // Fallback to setTimeout if JsOptimization is not available
+      const timeoutId = setTimeout(() => {
+        applyFilters(updatePoolsFromFilters);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
   }, [setSearchInput, setNewTypeOfWordFilter, updateSuggestions, applyFilters, updatePoolsFromFilters]);
 
   const handleSuggestionClick = useCallback((suggestion) => {
