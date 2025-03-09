@@ -22,6 +22,24 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
+## Debugging and Performance Features
+
+This project has source maps enabled for production builds, which helps with debugging and provides better insights through tools like Lighthouse. Source maps translate minified code back to the original source code, making it easier to identify and fix issues in production.
+
+For more information about source maps and how they're configured in this project, see the [Source Maps Guide](./source-maps-guide.md).
+
+## Accessibility Features
+
+This project prioritizes accessibility with improved color contrast ratios that meet WCAG 2.1 Level AA requirements. The color system has been optimized to ensure text is readable for all users, including those with visual impairments.
+
+For details on the accessibility improvements and contrast ratio enhancements, see the [Accessibility Improvements Guide](./accessibility-improvements.md).
+
+## Performance Optimizations
+
+This project implements advanced bundle optimization techniques to reduce JavaScript payload sizes and improve loading times. Optimizations include aggressive code splitting, granular chunking, and component-level import optimizations.
+
+For more information about the performance optimizations and bundle size reduction strategies, see the [Performance Optimizations Guide](./performance-optimizations.md).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

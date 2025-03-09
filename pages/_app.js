@@ -4,6 +4,7 @@ import { SessionProvider, useSession } from 'next-auth/react';
 import { AppProvider, useBaseContext } from '../contexts/AppContext';
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
+import { useCallback } from 'react';
 
 // Import CSS
 import '@/styles/output.css';
@@ -25,11 +26,14 @@ config.autoAddCss = false;
 
 // Dynamic imports for components that aren't needed immediately
 const LoadingScreen = dynamic(() => import('../components/ui/LoadingScreen'), {
-  ssr: false
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center min-h-screen">Laden...</div>
 });
 
+// LearningTable will be loaded only when needed
 const LearningTable = dynamic(() => import('../components/ui/LearningTable'), {
-  ssr: false
+  ssr: false,
+  loading: () => null
 });
 
 function AuthWrapper({ Component, pageProps }) {
@@ -70,9 +74,33 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
   const [isRouteChanging, setIsRouteChanging] = useState(false);
   const router = useRouter();
 
+  // Function to clean up any WebSocket connections
+  const cleanupWebSockets = useCallback(() => {
+    // Close any WebSocket connections that might be open
+    if (typeof window !== 'undefined') {
+      // This will help browsers know they can cache the page
+      // when navigating away from it
+      const websockets = Object.keys(window)
+        .filter(key => key.includes('WebSocket') || (window[key] && typeof window[key] === 'object' && window[key].OPEN))
+        .map(key => window[key]);
+      
+      websockets.forEach(ws => {
+        if (ws && typeof ws.close === 'function') {
+          try {
+            ws.close();
+          } catch (e) {
+            console.warn('Error closing WebSocket:', e);
+          }
+        }
+      });
+    }
+  }, []);
+
   useEffect(() => {
     const handleRouteChangeStart = () => {
       setIsRouteChanging(true);
+      // Clean up WebSockets before navigation
+      cleanupWebSockets();
     };
     const handleRouteChangeComplete = () => {
       setIsRouteChanging(false);
@@ -85,12 +113,19 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
     router.events.on('routeChangeComplete', handleRouteChangeComplete);
     router.events.on('routeChangeError', handleRouteChangeError);
 
+    // Add event listener for page unload to clean up WebSockets
+    window.addEventListener('beforeunload', cleanupWebSockets);
+
     return () => {
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
       router.events.off('routeChangeError', handleRouteChangeError);
+      window.removeEventListener('beforeunload', cleanupWebSockets);
+      
+      // Clean up WebSockets when component unmounts
+      cleanupWebSockets();
     };
-  }, [router.events]);
+  }, [router.events, cleanupWebSockets]);
 
   if (isRouteChanging) {
     return <LoadingScreen />;

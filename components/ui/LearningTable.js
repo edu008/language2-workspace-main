@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useUIContext } from "../../contexts/UIContext";
 import { useDataContext } from "../../contexts/AppContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./stats/tabs";
-import { Button, Dialog, DialogHeader, DialogBody, DialogFooter } from "@material-tailwind/react";
+// Import only the specific components needed
+import { Button } from "@material-tailwind/react/components/Button";
+import { Dialog } from "@material-tailwind/react/components/Dialog";
+import { DialogHeader } from "@material-tailwind/react/components/Dialog";
+import { DialogBody } from "@material-tailwind/react/components/Dialog";
+import { DialogFooter } from "@material-tailwind/react/components/Dialog";
 
 const LearningTable = () => {
   const {

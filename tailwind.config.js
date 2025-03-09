@@ -9,33 +9,6 @@ module.exports = withMT({
     "./src/**/*.{ts,tsx}",
     "./contexts/**/*.{js,jsx,ts,tsx}",
   ],
-  purge: {
-    enabled: process.env.NODE_ENV === 'production',
-    content: [
-      './components/**/*.{js,jsx,ts,tsx}',
-      './pages/**/*.{js,jsx,ts,tsx}',
-      './contexts/**/*.{js,jsx,ts,tsx}',
-      './styles/**/*.css',
-    ],
-    options: {
-      safelist: [
-        // Klassen, die dynamisch generiert werden und nicht entfernt werden sollten
-        /^grid-cols-/,
-        /^sm:grid-cols-/,
-        /^lg:grid-cols-/,
-        /^text-/,
-        /^bg-/,
-        /^from-/,
-        /^to-/,
-        /^border-/,
-        /^h-/,
-        /^w-/,
-        /^p-/,
-        /^m-/,
-        /^rounded-/,
-      ],
-    },
-  },
   darkMode: ["class"],
   safelist: [
     "grid-cols-1",
@@ -46,6 +19,65 @@ module.exports = withMT({
     "sm:grid-cols-2",
     "lg:grid-cols-3",
     "lg:grid-cols-4",
+    // Dynamically generated classes that should not be purged
+    /^grid-cols-/,
+    /^sm:grid-cols-/,
+    /^lg:grid-cols-/,
+    /^text-/,
+    /^bg-/,
+    /^from-/,
+    /^to-/,
+    /^border-/,
+    /^h-/,
+    /^w-/,
+    /^p-/,
+    /^m-/,
+    /^rounded-/,
+    // Animation classes
+    /^animate-/,
+    // Opacity modifiers
+    /^bg-.*\/\d+$/,
+    /^border-.*\/\d+$/,
+    /^text-.*\/\d+$/,
+    // State modifiers
+    /^checked:/,
+    /^focus:/,
+    /^hover:/,
+    /^disabled:/,
+    // Z-index classes
+    /^z-/,
+    // Gap classes
+    /^gap-/,
+    // Flex classes
+    /^flex-/,
+    // Transition classes
+    /^transition-/,
+    /^duration-/,
+    /^ease-/,
+    // Transform classes
+    /^transform-/,
+    // Shadow classes
+    /^shadow-/,
+    // Additional utility classes
+    /^justify-/,
+    /^items-/,
+    /^space-/,
+    /^overflow-/,
+    /^whitespace-/,
+    /^tracking-/,
+    /^font-/,
+    /^max-/,
+    /^min-/,
+    /^opacity-/,
+    /^outline-/,
+    /^ring-/,
+    /^scale-/,
+    /^rotate-/,
+    /^translate-/,
+    /^skew-/,
+    /^cursor-/,
+    /^select-/,
+    /^appearance-/
   ],
   prefix: "",
   theme: {
