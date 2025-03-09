@@ -18,47 +18,34 @@ The largest bundles included:
 - pages/index.js (916.5 KiB)
 - pages/_app.js (631.3 KiB)
 
-### Changes Made
+### Current Optimization Approach
 
-1. **Webpack Optimization Configuration**:
-   - Enabled the bundle analyzer for better visibility into bundle composition
-   - Implemented aggressive code splitting with optimized chunk configurations
-   - Configured TerserPlugin for better minification with multiple passes
-   - Set up granular chunking for node_modules dependencies
+Next.js handles bundling internally with its default configuration. The project no longer uses custom webpack configurations.
 
-2. **Dynamic Imports Enhancement**:
-   - Added loading states to dynamic imports for better user experience
-   - Improved the lazy loading of the LearningTable component
-   - Ensured components are only loaded when needed
+### Component-Level Optimizations
 
-3. **Component-Level Optimizations**:
-   - Replaced broad imports from Material Tailwind with specific component imports
-   - Example: Changed from `import { Button, Dialog, ... } from "@material-tailwind/react"` to individual imports from specific paths
+- Replaced broad imports from Material Tailwind with specific component imports
+- Example: Changed from `import { Button, Dialog, ... } from "@material-tailwind/react"` to individual imports from specific paths
 
 ### Benefits
 
 These changes improve the application in several ways:
 
-1. **Reduced Initial Load Time**: By splitting the code into smaller chunks and loading components only when needed, the initial page load is faster.
+1. **Reduced Initial Load Time**: By using Next.js's default optimization and loading components only when needed, the initial page load is faster.
 
 2. **Lower Data Usage**: Smaller bundles mean less data transferred, which is especially important for users on limited data plans or slower connections.
 
 3. **Improved Performance Metrics**: These optimizations directly address the Lighthouse performance issues related to large JavaScript payloads.
 
-4. **Better Caching**: Granular chunking allows for more efficient browser caching, as only changed chunks need to be re-downloaded.
+4. **Better Caching**: Next.js's default chunking allows for more efficient browser caching.
 
 ### Testing
 
 To verify these improvements:
 
-1. Run the bundle analyzer to visualize the new bundle sizes:
-   ```
-   npm run analyze
-   ```
+1. Run Lighthouse performance tests to confirm the reduction in bundle sizes
 
-2. Run Lighthouse performance tests again to confirm the reduction in bundle sizes
-
-3. Test the application on slower connections (you can simulate this in Chrome DevTools)
+2. Test the application on slower connections (you can simulate this in Chrome DevTools)
 
 ### Future Considerations
 
@@ -71,5 +58,3 @@ When adding new features or components:
 3. Regularly analyze bundle sizes to catch any regressions
 
 4. Consider code splitting at the route level to further reduce initial load times
-
-5. Use the webpack bundle analyzer periodically to identify opportunities for optimization

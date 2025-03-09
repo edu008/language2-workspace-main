@@ -45,12 +45,12 @@ export default function Home() {
     },
     {
       icon: <MessageSquare className="h-8 w-8 text-blue-600" />,
-      title: "Konversationspraxis",
+      title: "Konversations- praxis",
       description: "Verbessere deine Sprechfähigkeiten mit KI-gestützten Dialogübungen.",
     },
     {
       icon: <GraduationCap className="h-8 w-8 text-blue-600" />,
-      title: "Zertifikatsvorbereitung",
+      title: "Zertifikats- vorbereitung",
       description: "Gezielte Vorbereitung auf offizielle Deutschprüfungen wie Goethe oder TestDaF.",
     },
     {
