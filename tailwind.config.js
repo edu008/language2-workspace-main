@@ -11,6 +11,7 @@ module.exports = withMT({
   ],
   darkMode: ["class"],
   safelist: [
+    // Explicit grid classes
     "grid-cols-1",
     "grid-cols-2",
     "grid-cols-3",
@@ -19,65 +20,29 @@ module.exports = withMT({
     "sm:grid-cols-2",
     "lg:grid-cols-3",
     "lg:grid-cols-4",
-    // Dynamically generated classes that should not be purged
-    /^grid-cols-/,
-    /^sm:grid-cols-/,
-    /^lg:grid-cols-/,
-    /^text-/,
-    /^bg-/,
-    /^from-/,
-    /^to-/,
-    /^border-/,
-    /^h-/,
-    /^w-/,
-    /^p-/,
-    /^m-/,
-    /^rounded-/,
-    // Animation classes
-    /^animate-/,
-    // Opacity modifiers
-    /^bg-.*\/\d+$/,
-    /^border-.*\/\d+$/,
-    /^text-.*\/\d+$/,
-    // State modifiers
-    /^checked:/,
-    /^focus:/,
-    /^hover:/,
-    /^disabled:/,
-    // Z-index classes
-    /^z-/,
-    // Gap classes
-    /^gap-/,
-    // Flex classes
-    /^flex-/,
-    // Transition classes
-    /^transition-/,
-    /^duration-/,
-    /^ease-/,
-    // Transform classes
-    /^transform-/,
-    // Shadow classes
-    /^shadow-/,
-    // Additional utility classes
-    /^justify-/,
-    /^items-/,
-    /^space-/,
-    /^overflow-/,
-    /^whitespace-/,
-    /^tracking-/,
-    /^font-/,
-    /^max-/,
-    /^min-/,
-    /^opacity-/,
-    /^outline-/,
-    /^ring-/,
-    /^scale-/,
-    /^rotate-/,
-    /^translate-/,
-    /^skew-/,
-    /^cursor-/,
-    /^select-/,
-    /^appearance-/
+    // Specific regex patterns for dynamic ranges
+    { pattern: /^grid-cols-[1-6]$/, variants: ["sm", "md", "lg"] }, // e.g., grid-cols-1 to grid-cols-6
+    { pattern: /^text-(sm|base|lg|xl|2xl)$/ }, // e.g., text-sm, text-xl
+    { pattern: /^bg-(red|blue|green|gray)-[1-9]00\/\d{1,2}$/ }, // e.g., bg-red-500/50
+    { pattern: /^from-(red|blue)-[1-9]00$/ }, // e.g., from-red-500
+    { pattern: /^to-(red|blue)-[1-9]00$/ }, // e.g., to-blue-600
+    { pattern: /^border-(gray|black)-[1-9]00$/ }, // e.g., border-gray-200
+    { pattern: /^h-(full|[1-9])$/ }, // e.g., h-full, h-5
+    { pattern: /^w-(full|[1-9])$/ }, // e.g., w-full, w-4
+    { pattern: /^p-[1-8]$/ }, // e.g., p-1, p-4
+    { pattern: /^m-[1-8]$/ }, // e.g., m-2, m-6
+    { pattern: /^rounded-(sm|md|lg|full)$/ }, // e.g., rounded-sm, rounded-full
+    { pattern: /^animate-(fade|spin|pulse)$/ }, // e.g., animate-fade
+    { pattern: /^z-(10|20|30|40|50)$/ }, // e.g., z-10, z-50
+    { pattern: /^gap-[1-8]$/ }, // e.g., gap-2, gap-4
+    { pattern: /^flex-(row|col)$/ }, // e.g., flex-row
+    { pattern: /^transition-(all|colors)$/ }, // e.g., transition-all
+    { pattern: /^duration-[1-9]00$/ }, // e.g., duration-300
+    { pattern: /^ease-(in|out|in-out)$/ }, // e.g., ease-in
+    { pattern: /^shadow-(sm|md|lg)$/ }, // e.g., shadow-md
+    { pattern: /^justify-(start|center|end)$/ }, // e.g., justify-center
+    { pattern: /^items-(start|center|end)$/ }, // e.g., items-center
+    // Add more specific patterns or explicit classes as needed
   ],
   prefix: "",
   theme: {
@@ -93,39 +58,16 @@ module.exports = withMT({
       },
     },
     extend: {
-      height: {
-        "14": "3.5rem",
-      },
-      zIndex: {
-        "100": "100",
-        "200": "200",
-      },
-      fontSize: {
-        "xl": "1.25rem",
-        "sm": "0.875rem",
-      },
-      padding: {
-        "4": "1rem",
-        "6": "1.5rem",
-        "8": "2rem",
-      },
-      spacing: {
-        "3": "0.75rem",
-        "4": "1rem",
-      },
-      borderColor: {
-        "200": "#e5e7eb",
-      },
-      backgroundOpacity: {
-        "80": "0.8",
-      },
+      height: { "14": "3.5rem" },
+      zIndex: { "100": "100", "200": "200" },
+      fontSize: { "xl": "1.25rem", "sm": "0.875rem" },
+      padding: { "4": "1rem", "6": "1.5rem", "8": "2rem" },
+      spacing: { "3": "0.75rem", "4": "1rem" },
+      borderColor: { "200": "#e5e7eb" },
+      backgroundOpacity: { "80": "0.8" },
       colors: {
-        rose: {
-          100: "#ffe4e6",
-        },
-        red: {
-          600: "#dc2626",
-        },
+        rose: { 100: "#ffe4e6" },
+        red: { 600: "#dc2626" },
         black: "#000000",
         destructive: "#ff0000",
         border: "hsl(var(--border))",
@@ -171,10 +113,7 @@ module.exports = withMT({
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        blue: {
-          500: "#1E90FF",
-          600: "#1A7FFF",
-        },
+        blue: { 500: "#1E90FF", 600: "#1A7FFF" },
         deutsch: {
           blue: "#007AFF",
           red: "#FF3B30",
@@ -214,9 +153,9 @@ module.exports = withMT({
           200: "#d4d6e5",
           300: "#b3b7d0",
           400: "#8c91b6",
-          500: "#5A5E83", // Dunklere Farbe für besseren Kontrast (war: #6e739e)
-          600: "#484C6E", // Dunklere Farbe für besseren Kontrast (war: #585c82)
-          700: "#3A3D59", // Dunklere Farbe für besseren Kontrast (war: #484b6a)
+          500: "#5A5E83",
+          600: "#484C6E",
+          700: "#3A3D59",
           800: "#3e4159",
           900: "#363849",
           950: "#25262f",
@@ -299,7 +238,7 @@ module.exports = withMT({
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.8" },
         },
-        "fade-up": { // Neue Animation für Fade von unten nach oben
+        "fade-up": {
           "0%": { opacity: "0", transform: "translateY(50px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
@@ -334,7 +273,7 @@ module.exports = withMT({
         "fade-in-up": "fade-in-up 0.6s ease-out",
         "slide-in": "slide-in 0.6s ease-out",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
-        "fade-up": "fade-up 0.5s ease-out forwards", // Neue Animation hinzugefügt
+        "fade-up": "fade-up 0.5s ease-out forwards",
         "grow-x": "grow-x 0.5s ease-out forwards",
         "draw": "draw 1s ease-out forwards",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
